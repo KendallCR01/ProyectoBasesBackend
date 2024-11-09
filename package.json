@@ -1,0 +1,17 @@
+{
+  "name": "proyecto-gymbackend",
+  "version": "1.0.0",
+  "description": "Backend Gym",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "author": "Jose Linares",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "oracledb": "^6.6.0"
+  }
+}
