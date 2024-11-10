@@ -1180,6 +1180,50 @@ app.delete('/eliminar-cliente/:cedula', async (req, res) => {
     }
 });
 
+
+app.delete('/delete-membresia/:id', async (req, res) => {
+    const id = parseInt(req.params.id, 10); // Obtener el id desde la URL
+    let connection;
+  
+    try {
+      // Establecer la conexión con la base de datos
+      connection = await oracledb.getConnection(dbConfig);
+  
+      // Llamar al procedimiento almacenado sp_delete_membresia
+      await connection.execute(
+        `BEGIN sp_delete_membresia(:id); END;`,
+        [id],
+        { autoCommit: true }
+      );
+  
+      // Si se ejecuta correctamente, devolvemos un mensaje de éxito
+      res.status(200).json({ status: 'success', message: 'Membresía eliminada correctamente.' });
+  
+    } catch (error) {
+      console.error('Error al eliminar la membresía:', error);
+  
+      // Capturar errores específicos de Oracle y enviarlos al frontend
+      if (error.message.includes('ORA-20036')) {
+        res.status(404).json({ status: 'error', message: 'La membresía no existe o ya fue eliminada.' });
+      } else if (error.message.includes('ORA-20037')) {
+        res.status(400).json({ status: 'error', message: 'Error al eliminar la membresía: ' + error.message });
+      } else {
+        res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
+      }
+    } finally {
+      // Cerrar la conexión
+      if (connection) {
+        try {
+          await connection.close();
+        } catch (err) {
+          console.error('Error al cerrar la conexión:', err);
+        }
+      }
+    }
+  });
+  
+
+
 //-------------------------TODOS LOS INSERT-------------------------
 
 // Iniciar el servidor

@@ -647,29 +647,22 @@ END;
 
 ---------------------triggers membresia----------------------------------------- 
 
+
+
 CREATE OR REPLACE TRIGGER trg_delete_membresia
-BEFORE DELETE ON membresia
-FOR EACH ROW
-DECLARE
-    v_existente NUMBER;
-BEGIN
-    -- Verificar si la membresía existe antes de eliminarla
-    SELECT COUNT(*) INTO v_existente
-    FROM membresia
-    WHERE id = :OLD.id;
-
-    IF v_existente = 0 THEN
-        RAISE_APPLICATION_ERROR(-20036, 'La membresía que desea eliminar no existe.');
-    ELSE
-        -- Mensaje de confirmación de eliminación
-        DBMS_OUTPUT.PUT_LINE('La membresía ha sido eliminada correctamente.');
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al eliminar la membresía: ' || SQLERRM);
-END;
-/
-
+    BEFORE DELETE ON membresia
+    FOR EACH ROW
+    BEGIN
+        -- El trigger permite la eliminación del registro sin validaciones adicionales.
+     -- Si ocurre un error en la eliminación, se captura en el bloque EXCEPTION.
+ 
+      DBMS_OUTPUT.PUT_LINE('La membresía ha sido eliminada correctamente.');
+  EXCEPTION
+       WHEN OTHERS THEN
+          -- Usar RAISE_APPLICATION_ERROR para que el backend pueda capturar el mensaje de error
+          RAISE_APPLICATION_ERROR(-20037, 'Error al eliminar la membresía: ' || SQLERRM);
+   END trg_delete_membresia;
+  /
 
 ---------------------triggers rutinas----------------------------------------- 
 
@@ -1045,22 +1038,26 @@ END actualizar_membresia;
 /
 
 ----------------------------delete--------------------------------------------
+
 CREATE OR REPLACE PROCEDURE sp_delete_membresia(
-    p_id IN membresia.id%TYPE
-) AS
-BEGIN
-    DELETE FROM membresia
-    WHERE id = p_id;
-    DBMS_OUTPUT.PUT_LINE('Membresía eliminada correctamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error en sp_delete_membresia: ' || SQLERRM);
-        RAISE;
-END sp_delete_membresia;
-/
+       p_id IN membresia.id%TYPE
+   ) AS
+   BEGIN
+       DELETE FROM membresia
+       WHERE id = p_id;
 
-
-
+       IF SQL%ROWCOUNT = 0 THEN
+           RAISE_APPLICATION_ERROR(-20036, 'La membresía no existe o ya ha sido eliminada.');
+     END IF;
+ 
+    
+      NULL;  -- El procedimiento en este caso no necesita imprimir, solo eliminar.
+  EXCEPTION
+       WHEN OTHERS THEN
+          
+          RAISE_APPLICATION_ERROR(-20037, 'Error al eliminar la membresía: ' || SQLERRM);
+  END sp_delete_membresia;
+  /
 
 --------------------------------rutinas--------------------------------------------
 
