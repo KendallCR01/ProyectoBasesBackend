@@ -42,19 +42,6 @@ CREATE TABLE maquinas (
     dificultad VARCHAR2(30)
 );
 
-CREATE TABLE rutinas (
-    id_rutina INT PRIMARY KEY,
-    cliente INT,
-    instructor INT,
-    maquina INT,
-    fecha DATE,
-    horas INT,
-    FOREIGN KEY (cliente) REFERENCES Cliente(cedula),
-    FOREIGN KEY (instructor) REFERENCES Trabajador(cod_instructor),
-    FOREIGN KEY (maquina) REFERENCES Maquinas(id_maquina)
-);
-
-
 CREATE TABLE trabajador (
     cod_instructor INT PRIMARY KEY,
     nombre VARCHAR2(30),
@@ -68,6 +55,21 @@ CREATE TABLE trabajador (
     rool VARCHAR2(30),
     CONSTRAINT chk_rool CHECK (rool IN ('entrenador', 'soporte'))
 );
+
+
+CREATE TABLE rutinas (
+    id_rutina INT PRIMARY KEY,
+    cliente INT,
+    instructor INT,
+    maquina INT,
+    fecha DATE,
+    horas INT,
+    FOREIGN KEY (cliente) REFERENCES Cliente(cedula),
+    FOREIGN KEY (instructor) REFERENCES Trabajador(cod_instructor),
+    FOREIGN KEY (maquina) REFERENCES Maquinas(id_maquina)
+);
+
+
 
 CREATE TABLE cursos (
     id_curso INT PRIMARY KEY,
@@ -778,6 +780,24 @@ END mostrar_informacion_cliente;
 
 
 --------------Procedimiento para mostrar la información del instructor por nombre--------------
+-----------------------------función para optener años del trabajador------------------------
+
+
+
+--SET SERVEROUTPUT ON;
+
+
+-- Intenta insertar un cliente con datos que ya existan para verificar el mensaje de duplicado.
+--INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
+--VALUES (123456789, 'Pedro', 'Gomez', 'Martinez', 'Calle 123', 'pedro@mail.com', TO_DATE('2024-01-01', 'YYYY-MM-DD'), 12345678, 87654321);
+
+-- Intenta actualizar un cliente cambiando un campo que no sea clave primaria o foránea.
+--UPDATE cliente SET nombre = 'Juan Carlos' WHERE cedula = 123456789;
+
+
+-- Intenta eliminar un cliente que esté relacionado con otras tablas para observar el mensaje de restricción.
+--DELETE FROM cliente WHERE cedula = 123456789;
+
 
 
 CREATE OR REPLACE FUNCTION obtener_anios_trabajo(fecha_contratacion DATE) RETURN NUMBER IS
@@ -808,23 +828,6 @@ END mostrar_informacion_instructor;
 /
 
 
------------------------------función para optener años del trabajador------------------------
-
-
-
---SET SERVEROUTPUT ON;
-
-
--- Intenta insertar un cliente con datos que ya existan para verificar el mensaje de duplicado.
---INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
---VALUES (123456789, 'Pedro', 'Gomez', 'Martinez', 'Calle 123', 'pedro@mail.com', TO_DATE('2024-01-01', 'YYYY-MM-DD'), 12345678, 87654321);
-
--- Intenta actualizar un cliente cambiando un campo que no sea clave primaria o foránea.
---UPDATE cliente SET nombre = 'Juan Carlos' WHERE cedula = 123456789;
-
-
--- Intenta eliminar un cliente que esté relacionado con otras tablas para observar el mensaje de restricción.
---DELETE FROM cliente WHERE cedula = 123456789;
 
 
 ------------procedures de insert -----------------------------------
