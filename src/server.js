@@ -7,9 +7,9 @@ const port = 3000;
 
 // Configuración de la conexión a la base de datos
 const dbConfig = {
-    user: 'system',
+    user: 'super_user',
     password: 'root',
-    connectString: 'localhost:1521/XEPDB1' // Aquí usas el SID
+    connectString: 'localhost:1521/XE' // Aquí usas el SID
 };
 
 // Habilitar CORS para todas las solicitudes

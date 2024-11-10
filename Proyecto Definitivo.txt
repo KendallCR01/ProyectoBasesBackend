@@ -1593,7 +1593,9 @@ VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 5);
 INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
 VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 4);
 
+SET SERVEROUTPUT ON;
 
+COMMIT;
 
 --ELIMINAR_CLIENTE
 --ELIMINAR_CURSO
