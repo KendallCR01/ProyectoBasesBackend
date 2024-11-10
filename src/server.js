@@ -71,11 +71,6 @@ app.get('/buscar-membresia/:id', async (req, res) => {
 
 
 
-
-
-
-
-
 // Busca rutina por id
 app.get('/buscar-rutina/:id', async (req, res) => {
     let connection;
@@ -1131,6 +1126,40 @@ app.put('/actualizar-membresia', async (req, res) => {
             error: err.message 
         });
     } finally {
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+// Eliminar cliente por cédula
+app.delete('/eliminar-cliente/:cedula', async (req, res) => {
+    let connection;
+    const cedula = req.params.cedula;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Ejecutar el procedimiento almacenado
+        await connection.execute(
+            `BEGIN super_user.eliminar_cliente(:cedula); END;`,
+            {
+                cedula: cedula // Parámetro para el procedimiento
+            }
+        );
+
+        res.json({ message: 'Cliente eliminado con éxito' });
+
+    } catch (err) {
+        console.error('Error al eliminar el cliente:', err);
+        res.status(500).send('Error al eliminar el cliente');
+    } finally {
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();
