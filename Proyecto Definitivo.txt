@@ -1,3 +1,21 @@
+---Por si hay que borrarlo todo y volver a correr el scipt:-----
+
+ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
+DROP TABLESPACE gimnasio INCLUDING CONTENTS AND DATAFILES;
+DROP USER super_user CASCADE;
+DROP TABLE historial_curso;
+DROP TABLE rutinas;
+DROP TABLE cursos;
+DROP TABLE trabajador;
+DROP TABLE maquinas;
+DROP TABLE membresia;
+DROP TABLE cliente;
+DROP ROLE instructor;
+DROP ROLE usuario_cliente;
+DROP ROLE soporte;
+
+---Aqui tambien cambie mi direccion del tablespace----
+
 CREATE TABLESPACE gimnasio
    DATAFILE 'C:\tablespace\gimnasio.dbf' 
    SIZE 100M 
@@ -12,7 +30,13 @@ CREATE USER super_user IDENTIFIED BY "root"
 -- Otorgar roles básicos
 GRANT DBA TO super_user;
 
-sqlplus super_user/root@localhost/XEPDB1
+
+--Aqui lo cambie por esto, solo asi me corrio-----
+
+conn super_user/root@localhost/XE;  
+
+
+---Aqui tambien dr agrega el tablespace al final creo..----
 
 CREATE TABLE cliente (
     cedula INT PRIMARY KEY,
@@ -24,7 +48,7 @@ CREATE TABLE cliente (
     fecha_inscripcion DATE,
     celular INT,
     tel_habitacion INT
-);
+)TABLESPACE gimnasio; 
 
 CREATE TABLE membresia (
     id INT PRIMARY KEY,
@@ -33,14 +57,14 @@ CREATE TABLE membresia (
     estado VARCHAR2(30),
     fecha DATE,
     FOREIGN KEY (id_cliente) REFERENCES Cliente(cedula)
-);
+)TABLESPACE gimnasio; 
 
 CREATE TABLE maquinas (
     id_maquina INT PRIMARY KEY,
     descripcion VARCHAR2(30),
     estado VARCHAR2(30),
     dificultad VARCHAR2(30)
-);
+)TABLESPACE gimnasio; 
 
 CREATE TABLE trabajador (
     cod_instructor INT PRIMARY KEY,
@@ -54,8 +78,7 @@ CREATE TABLE trabajador (
     fecha_contratacion DATE,
     rool VARCHAR2(30),
     CONSTRAINT chk_rool CHECK (rool IN ('entrenador', 'soporte'))
-);
-
+)TABLESPACE gimnasio; 
 
 CREATE TABLE rutinas (
     id_rutina INT PRIMARY KEY,
@@ -67,8 +90,7 @@ CREATE TABLE rutinas (
     FOREIGN KEY (cliente) REFERENCES Cliente(cedula),
     FOREIGN KEY (instructor) REFERENCES Trabajador(cod_instructor),
     FOREIGN KEY (maquina) REFERENCES Maquinas(id_maquina)
-);
-
+)TABLESPACE gimnasio; 
 
 
 CREATE TABLE cursos (
@@ -76,7 +98,7 @@ CREATE TABLE cursos (
     descripcion VARCHAR2(50),
     horario VARCHAR2(20), 
     disponibilidad VARCHAR2(10)
-);
+)TABLESPACE gimnasio; 
 
 CREATE TABLE historial_curso (
     id_historial INT PRIMARY KEY,
@@ -88,7 +110,7 @@ CREATE TABLE historial_curso (
     FOREIGN KEY (cliente) REFERENCES Cliente(cedula),
     FOREIGN KEY (instructor) REFERENCES Trabajador(cod_instructor),
     FOREIGN KEY (curso) REFERENCES Cursos(id_curso)
-);
+)TABLESPACE gimnasio; 
 
 /*Para habilitar las auditorias*/
 ALTER SYSTEM SET audit_trail=db SCOPE=SPFILE;
@@ -100,6 +122,9 @@ AUDIT ALL ON Maquinas;
 AUDIT ALL ON Trabajador;
 AUDIT ALL ON Historial_curso;
 AUDIT ALL ON Cursos;
+
+--Aqui agregue esto, solo asi se pueden crear roles y no tira error, no se por que.. -------
+ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;  
 
 CREATE ROLE usuario_cliente;
 
@@ -780,24 +805,6 @@ END mostrar_informacion_cliente;
 
 
 --------------Procedimiento para mostrar la información del instructor por nombre--------------
------------------------------función para optener años del trabajador------------------------
-
-
-
---SET SERVEROUTPUT ON;
-
-
--- Intenta insertar un cliente con datos que ya existan para verificar el mensaje de duplicado.
---INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
---VALUES (123456789, 'Pedro', 'Gomez', 'Martinez', 'Calle 123', 'pedro@mail.com', TO_DATE('2024-01-01', 'YYYY-MM-DD'), 12345678, 87654321);
-
--- Intenta actualizar un cliente cambiando un campo que no sea clave primaria o foránea.
---UPDATE cliente SET nombre = 'Juan Carlos' WHERE cedula = 123456789;
-
-
--- Intenta eliminar un cliente que esté relacionado con otras tablas para observar el mensaje de restricción.
---DELETE FROM cliente WHERE cedula = 123456789;
-
 
 
 CREATE OR REPLACE FUNCTION obtener_anios_trabajo(fecha_contratacion DATE) RETURN NUMBER IS
@@ -828,6 +835,23 @@ END mostrar_informacion_instructor;
 /
 
 
+-----------------------------función para optener años del trabajador------------------------
+
+
+
+--SET SERVEROUTPUT ON;
+
+
+-- Intenta insertar un cliente con datos que ya existan para verificar el mensaje de duplicado.
+--INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
+--VALUES (123456789, 'Pedro', 'Gomez', 'Martinez', 'Calle 123', 'pedro@mail.com', TO_DATE('2024-01-01', 'YYYY-MM-DD'), 12345678, 87654321);
+
+-- Intenta actualizar un cliente cambiando un campo que no sea clave primaria o foránea.
+--UPDATE cliente SET nombre = 'Juan Carlos' WHERE cedula = 123456789;
+
+
+-- Intenta eliminar un cliente que esté relacionado con otras tablas para observar el mensaje de restricción.
+--DELETE FROM cliente WHERE cedula = 123456789;
 
 
 ------------procedures de insert -----------------------------------
@@ -1520,8 +1544,7 @@ END;
 
 -- Insertar registros en la tabla cliente
 INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
-VALUES (123456, 'Juan', 'Pérez', 'Gómez', 'Calle Ficticia 123', 'juan.perez@email.com', TO_DATE('2024-01-15', 'YYYY-MM-DD'), 987654321, 123456789);//Busca cliente por cedula
-
+VALUES (123456, 'Juan', 'Pérez', 'Gómez', 'Calle Ficticia 123', 'juan.perez@email.com', TO_DATE('2024-01-15', 'YYYY-MM-DD'), 987654321, 123456789);
 
  
 INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
@@ -1572,29 +1595,17 @@ VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 4);
 
 
 
-ELIMINAR_CLIENTE
-ELIMINAR_CURSO
-ELIMINAR_HISTORIAL_CURSO
-ELIMINAR_MAQUINA
-ELIMINAR_RUTINA
-ELIMINAR_TRABAJADOR
-INSERTAR_CURSO
-INSERTAR_HISTORIAL_CURSO
-INSERTAR_MAQUINA
-INSERTAR_RUTINA
-INSERTAR_TRABAJADOR_Y_CREAR_USUARIO
-SP_DELETE_MEMBRESIA
-SP_INSERT_MEMBRESIA
-VER_AUDITORIAS
-
-
-
-BEGIN
-    FOR r IN (SELECT object_name
-              FROM all_objects
-              WHERE object_type = 'PROCEDURE'
-                AND owner = 'SUPER_USER') LOOP
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON SUPER_USER.' || r.object_name || ' TO SYSTEM';
-    END LOOP;
-END;
-/
+--ELIMINAR_CLIENTE
+--ELIMINAR_CURSO
+--ELIMINAR_HISTORIAL_CURSO
+--ELIMINAR_MAQUINA
+--ELIMINAR_RUTINA
+--ELIMINAR_TRABAJADOR
+--INSERTAR_CURSO
+--INSERTAR_HISTORIAL_CURSO
+--INSERTAR_MAQUINA
+--INSERTAR_RUTINA
+--INSERTAR_TRABAJADOR_Y_CREAR_USUARIO
+--SP_DELETE_MEMBRESIA
+--SP_INSERT_MEMBRESIA
+--VER_AUDITORIAS
