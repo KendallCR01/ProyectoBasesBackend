@@ -19,62 +19,6 @@ app.use(express.json());
 
 //--------------------Todos los buscar individual------------------------------------
 
-//Busca cliente por cedula
-app.get('/buscar-cliente/:cedula', async (req, res) => {
-    let connection;
-
-    const cedula = req.params.cedula;
-
-    try {
-        // Establecer la conexión con la base de datos
-        connection = await oracledb.getConnection(dbConfig);
-        console.log('Conexión exitosa a la base de datos.');
-
-        // Ejecutar el procedimiento almacenado
-        const result = await connection.execute(
-            `BEGIN super_user.buscar_cliente(:cedula, :cursor); END;`,
-            {
-                cedula: cedula, // Parámetro para el procedimiento
-                cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT } // Definir el cursor de salida
-            }
-        );
-
-        const cursor = result.outBinds.cursor;
-        const rows = await cursor.getRows(); // Obtener las filas del cursor
-
-        // Si se encuentran resultados, formateamos los datos
-        if (rows.length > 0) {
-            const cliente = {
-                cedula: rows[0][0],
-                nombre: rows[0][1],
-                apellido1: rows[0][2],
-                apellido2: rows[0][3],
-                direccion: rows[0][4],
-                e_mail: rows[0][5],
-                fecha_inscripcion: rows[0][6],
-                celular: rows[0][7],
-                tel_habitacion: rows[0][8]
-            };
-            res.json(cliente); // Devolver los datos como un objeto JSON
-        } else {
-            res.status(404).json({ message: 'Cliente no encontrado' });
-        }
-
-    } catch (err) {
-        console.error('Error al conectar a la base de datos:', err);
-        res.status(500).send('Error al conectar a la base de datos');
-    } finally {
-        // Asegurarse de cerrar la conexión
-        if (connection) {
-            try {
-                await connection.close();
-            } catch (err) {
-                console.error('Error al cerrar la conexión:', err);
-            }
-        }
-    }
-});
-
 //Busca membresia por id
 app.get('/buscar-membresia/:id', async (req, res) => {
     let connection;
