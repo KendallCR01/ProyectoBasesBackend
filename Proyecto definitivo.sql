@@ -509,7 +509,6 @@ BEGIN
     END IF;
 
     -- No es necesario verificar si la rutina existe porque Oracle no permitirá que se actualice un registro inexistente.
-    -- Si el ID no existe, Oracle lanzará un error automáticamente al intentar hacer la actualización.
 
 EXCEPTION
     WHEN OTHERS THEN
@@ -555,6 +554,7 @@ BEGIN
     -- Validar que no se actualicen las claves primaria y foráneas
     IF :OLD.id_historial != :NEW.id_historial THEN
         RAISE_APPLICATION_ERROR(-20027, 'No se permite actualizar el ID del historial.');
+    ELSIF :OLD.cliente != :NEW.cliente THEN
     ELSIF :OLD.cliente != :NEW.cliente THEN
         RAISE_APPLICATION_ERROR(-20028, 'No se permite actualizar el cliente en el historial.');
     ELSIF :OLD.instructor != :NEW.instructor THEN
@@ -626,14 +626,23 @@ BEGIN
         RAISE_APPLICATION_ERROR(-20035, 'No se puede eliminar el cliente porque tiene rutinas asociadas.');
     END IF;
 
+    -- Verificar si el cliente tiene registros relacionados en la tabla historial_curso
+    SELECT COUNT(*) INTO v_existente
+    FROM historial_curso
+    WHERE cliente = :OLD.cedula;
+
+    IF v_existente > 0 THEN
+        RAISE_APPLICATION_ERROR(-20036, 'No se puede eliminar el cliente porque tiene historial de cursos asociados.');
+    END IF;
+
     -- Si el cliente no tiene relaciones, permitir el borrado y mostrar mensaje de éxito
     DBMS_OUTPUT.PUT_LINE('Cliente eliminado con éxito.');
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Error al eliminar el cliente: ' || SQLERRM);
+        RAISE; -- Re-lanzar la excepción
 END;
 /
-
 
 
 ---------------------triggers membresia----------------------------------------- 
@@ -940,7 +949,47 @@ END eliminar_cliente;
 /
 
 
+CREATE OR REPLACE PROCEDURE eliminar_cliente (
+    p_cedula IN cliente.cedula%TYPE
+) AS
+    v_membresias NUMBER;
+    v_rutinas NUMBER;
+    v_historial_curso NUMBER;
+BEGIN
+    -- Verificar si el cliente tiene registros relacionados en la tabla membresia
+    SELECT COUNT(*) INTO v_membresias
+    FROM membresia
+    WHERE id_cliente = p_cedula;
 
+    IF v_membresias > 0 THEN
+        RAISE_APPLICATION_ERROR(-20034, 'No se puede eliminar el cliente porque tiene membresías asociadas.');
+    END IF;
+
+    -- Verificar si el cliente tiene registros relacionados en la tabla rutinas
+    SELECT COUNT(*) INTO v_rutinas
+    FROM rutinas
+    WHERE cliente = p_cedula;
+
+    IF v_rutinas > 0 THEN
+        RAISE_APPLICATION_ERROR(-20035, 'No se puede eliminar el cliente porque tiene rutinas asociadas.');
+    END IF;
+
+    -- Verificar si el cliente tiene registros relacionados en la tabla historial_curso
+    SELECT COUNT(*) INTO v_historial_curso
+    FROM historial_curso
+    WHERE cliente = p_cedula;
+
+    IF v_historial_curso > 0 THEN
+        RAISE_APPLICATION_ERROR(-20036, 'No se puede eliminar el cliente porque tiene historial de cursos asociados.');
+    END IF;
+
+    -- Si no hay registros relacionados, eliminar el cliente
+    DELETE FROM cliente
+    WHERE cedula = p_cedula;
+
+    COMMIT;
+END eliminar_cliente;
+/
 
 --------------------------------membresia--------------------------------------------
 
@@ -1466,6 +1515,7 @@ BEGIN
         WHERE id_curso = p_id_curso;
 END;
 /
+
 
 
 

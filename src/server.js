@@ -1140,33 +1140,43 @@ app.put('/actualizar-membresia', async (req, res) => {
 app.delete('/eliminar-cliente/:cedula', async (req, res) => {
     let connection;
     const cedula = req.params.cedula;
-
+  
     try {
-        // Establecer la conexión con la base de datos
-        connection = await oracledb.getConnection(dbConfig);
-
-        // Ejecutar el procedimiento almacenado
-        await connection.execute(
-            `BEGIN super_user.eliminar_cliente(:cedula); END;`,
-            {
-                cedula: cedula // Parámetro para el procedimiento
-            }
-        );
-
-        res.json({ message: 'Cliente eliminado con éxito' });
-
+      // Establecer la conexión con la base de datos
+      connection = await oracledb.getConnection(dbConfig);
+  
+      // Ejecutar el procedimiento almacenado para eliminar el cliente
+      await connection.execute(
+        `BEGIN
+           super_user.eliminar_cliente(:cedula);
+         END;`,
+        { cedula: cedula }
+      );
+  
+      res.json({ message: 'Cliente eliminado con éxito' });
+  
     } catch (err) {
-        console.error('Error al eliminar el cliente:', err);
-        res.status(500).send('Error al eliminar el cliente');
+      console.error('Error al eliminar el cliente:', err);
+  
+      // Manejar errores personalizados de Oracle
+      if (err.errorNum === 20034) {
+        res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene membresías asociadas.' });
+      } else if (err.errorNum === 20035) {
+        res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene rutinas asociadas.' });
+      } else if (err.errorNum === 20036) {
+        res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene historial de cursos asociados.' });
+      } else {
+        res.status(500).json({ message: 'Error al eliminar el cliente', error: err.message });
+      }
     } finally {
-        // Asegurarse de cerrar la conexión
-        if (connection) {
-            try {
-                await connection.close();
-            } catch (err) {
-                console.error('Error al cerrar la conexión:', err);
-            }
+      // Asegurarse de cerrar la conexión
+      if (connection) {
+        try {
+          await connection.close();
+        } catch (err) {
+          console.error('Error al cerrar la conexión:', err);
         }
+      }
     }
 });
 
