@@ -1565,6 +1565,53 @@ app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
     }
 });
 
+app.post('/insert-membresia', async (req, res) => {
+    const { id, id_cliente, monto, estado, fecha } = req.body; // Obtener los datos del cuerpo de la solicitud
+    let connection;
+
+    try {
+        // Establecer conexión a la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento almacenado para insertar membresía
+        await connection.execute(
+            `BEGIN sp_insert_membresia(:id, :id_cliente, :monto, :estado, :fecha); END;`,
+            {
+                id,
+                id_cliente,
+                monto,
+                estado,
+                fecha: new Date(fecha) // Convertir a formato de fecha adecuado
+            },
+            { autoCommit: true }
+        );
+
+        // Enviar respuesta de éxito al cliente
+        res.status(200).json({ status: 'success', message: 'Membresía insertada correctamente.' });
+
+    } catch (error) {
+        console.error('Error al insertar la membresía:', error);
+
+        // Manejo de errores específicos
+        if (error.message.includes('ORA-20002')) {
+            res.status(409).json({ status: 'error', message: 'La membresía ya existe.' });
+        } else if (error.message.includes('ORA-20003')) {
+            res.status(404).json({ status: 'error', message: 'El cliente especificado en la membresía no existe.' });
+        } else {
+            res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
+        }
+    } finally {
+        // Cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
