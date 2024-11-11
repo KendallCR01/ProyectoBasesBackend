@@ -39,7 +39,7 @@ conn super_user/root@localhost/XE;
 ---Aqui tambien dr agrega el tablespace al final creo..----
 
 CREATE TABLE cliente (
-    cedula INT PRIMARY KEY,
+    cedula VARCHAR2(30) PRIMARY KEY,
     nombre VARCHAR2(30),
     apellido1 VARCHAR2(30),
     apellido2 VARCHAR2(30),
@@ -52,7 +52,7 @@ CREATE TABLE cliente (
 
 CREATE TABLE membresia (
     id INT PRIMARY KEY,
-    id_cliente INT,
+    id_cliente VARCHAR2(30),
     monto INT,
     estado VARCHAR2(30),
     fecha DATE,
@@ -82,7 +82,7 @@ CREATE TABLE trabajador (
 
 CREATE TABLE rutinas (
     id_rutina INT PRIMARY KEY,
-    cliente INT,
+    cliente VARCHAR2(30),
     instructor INT,
     maquina INT,
     fecha DATE,
@@ -102,7 +102,7 @@ CREATE TABLE cursos (
 
 CREATE TABLE historial_curso (
     id_historial INT PRIMARY KEY,
-    cliente INT,
+    cliente VARCHAR2(30),
     instructor INT,
     curso INT,
     fecha DATE,
@@ -115,6 +115,7 @@ CREATE TABLE historial_curso (
 /*Para habilitar las auditorias*/
 ALTER SYSTEM SET audit_trail=db SCOPE=SPFILE;
 
+---Algo va mal con esto
 AUDIT ALL ON Cliente;
 AUDIT ALL ON Membresia;
 AUDIT ALL ON Rutinas;
@@ -123,7 +124,7 @@ AUDIT ALL ON Trabajador;
 AUDIT ALL ON Historial_curso;
 AUDIT ALL ON Cursos;
 
---Aqui agregue esto, solo asi se pueden crear roles y no tira error, no se por que.. -------
+--Aqui agregue esto, solo asi se pueden crear roles y no tira error, no se por que..
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;  
 
 CREATE ROLE usuario_cliente;
@@ -491,7 +492,7 @@ BEGIN
     -- DBMS_OUTPUT.PUT_LINE('La información de la membresía ha sido actualizada correctamente.');
 EXCEPTION
     WHEN OTHERS THEN
-        RAISE; -- Re-lanzar la excepción
+        RAISE; -- Re-lanzar la excepción para que sea manejada fuera del trigger
 END;
 /
 
@@ -692,37 +693,38 @@ END;
 ---------------------triggers trabajador-----------------------------------------
 
 
-CREATE OR REPLACE TRIGGER trg_delete_trabajador
-BEFORE DELETE ON trabajador
-FOR EACH ROW
-DECLARE
-    v_existente NUMBER;
-BEGIN
-    -- Verificar si el trabajador está relacionado en la tabla rutinas
-    SELECT COUNT(*) INTO v_existente
-    FROM rutinas
-    WHERE instructor = :OLD.cod_instructor;
 
-    IF v_existente > 0 THEN
-        RAISE_APPLICATION_ERROR(-20038, 'No se puede eliminar el trabajador porque tiene rutinas asociadas.');
-    END IF;
-
-    -- Verificar si el trabajador está relacionado en la tabla historial_curso
-    SELECT COUNT(*) INTO v_existente
-    FROM historial_curso
-    WHERE instructor = :OLD.cod_instructor;
-
-    IF v_existente > 0 THEN
-        RAISE_APPLICATION_ERROR(-20039, 'No se puede eliminar el trabajador porque tiene un historial de cursos asociado.');
-    END IF;
-
-    -- Mensaje de confirmación de eliminación
-    DBMS_OUTPUT.PUT_LINE('El trabajador ha sido eliminado correctamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al eliminar el trabajador: ' || SQLERRM);
-END;
-/
+ CREATE OR REPLACE TRIGGER trg_delete_trabajador
+    BEFORE DELETE ON trabajador
+    FOR EACH ROW
+    DECLARE
+       v_rutinas_existente NUMBER;
+        v_historial_existente NUMBER;
+    BEGIN
+        -- Verificar si el trabajador está relacionado en la tabla rutinas
+        SELECT COUNT(*) INTO v_rutinas_existente
+       FROM rutinas
+      WHERE instructor = :OLD.cod_instructor;
+ 
+       IF v_rutinas_existente > 0 THEN
+           RAISE_APPLICATION_ERROR(-20038, 'No se puede eliminar el trabajador porque tiene rutinas asociadas.');
+      END IF;
+ 
+       -- Verificar si el trabajador está relacionado en la tabla historial_curso
+       SELECT COUNT(*) INTO v_historial_existente
+      FROM historial_curso
+      WHERE instructor = :OLD.cod_instructor;
+ 
+       IF v_historial_existente > 0 THEN
+           RAISE_APPLICATION_ERROR(-20039, 'No se puede eliminar el trabajador porque tiene un historial de cursos asociado.');
+      END IF;
+ 
+      DBMS_OUTPUT.PUT_LINE('El trabajador ha sido eliminado correctamente.');
+  EXCEPTION
+       WHEN OTHERS THEN
+           DBMS_OUTPUT.PUT_LINE('Error al eliminar el trabajador: ' || SQLERRM);
+   END trg_delete_trabajador;
+   /
 
 
 
@@ -730,27 +732,22 @@ END;
 ---------------------triggers historial_curso----------------------------------------- 
 
 CREATE OR REPLACE TRIGGER trg_delete_historial_curso
-BEFORE DELETE ON historial_curso
-FOR EACH ROW
-DECLARE
-    v_existente NUMBER;
-BEGIN
-    -- Verificar si el historial de curso existe antes de eliminarlo
-    SELECT COUNT(*) INTO v_existente
-    FROM historial_curso
-    WHERE id_historial = :OLD.id_historial;
-
-    IF v_existente = 0 THEN
-        RAISE_APPLICATION_ERROR(-20040, 'El historial de curso que desea eliminar no existe.');
-    ELSE
-        -- Mensaje de confirmación de eliminación
-        DBMS_OUTPUT.PUT_LINE('El historial de curso ha sido eliminado correctamente.');
-    END IF;
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al eliminar el historial de curso: ' || SQLERRM);
-END;
-/
+    BEFORE DELETE ON historial_curso
+    FOR EACH ROW
+    DECLARE
+    BEGIN
+        -- Aquí puedes agregar lógica adicional si necesitas verificar relaciones,
+        -- pero omite la consulta de la misma tabla 'historial_curso' para evitar el error de "tabla mutante".
+  
+       -- Confirmación de eliminación (solo para propósitos de verificación)
+      DBMS_OUTPUT.PUT_LINE('El historial de curso ha sido eliminado correctamente.');
+ 
+   EXCEPTION
+       WHEN OTHERS THEN
+           -- Lanzar un error genérico si ocurre un problema inesperado en el trigger
+           RAISE_APPLICATION_ERROR(-20047, 'Error al intentar eliminar el historial de curso: ' || SQLERRM);
+  END trg_delete_historial_curso;
+  /
 --------------------triggers maquina----------------------------------------- 
 
 CREATE OR REPLACE TRIGGER trg_delete_maquina
@@ -794,27 +791,27 @@ END trg_delete_maquina;
 ---------------------triggers cursos----------------------------------------- 
 
 CREATE OR REPLACE TRIGGER trg_delete_cursos
-BEFORE DELETE ON cursos
-FOR EACH ROW
-DECLARE
-    v_existente NUMBER;
-BEGIN
-    -- Verificar si el curso está relacionado en la tabla historial_curso
-    SELECT COUNT(*) INTO v_existente
-    FROM historial_curso
-    WHERE curso = :OLD.id_curso;
-
-    IF v_existente > 0 THEN
-        RAISE_APPLICATION_ERROR(-20041, 'No se puede eliminar el curso porque tiene un historial de cursos asociado.');
-    END IF;
-
-    -- Mensaje de confirmación de eliminación
-    DBMS_OUTPUT.PUT_LINE('El curso ha sido eliminado correctamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al eliminar el curso: ' || SQLERRM);
-END;
-/
+    BEFORE DELETE ON cursos
+    FOR EACH ROW
+    DECLARE
+        v_existente NUMBER;
+    BEGIN
+       -- Verificar si el curso está relacionado en la tabla historial_curso
+        SELECT COUNT(*) INTO v_existente
+        FROM historial_curso
+       WHERE curso = :OLD.id_curso;
+ 
+      IF v_existente > 0 THEN
+          -- Lanzar error si el curso está relacionado con registros en "historial_curso"
+          RAISE_APPLICATION_ERROR(-20041, 'No se puede eliminar el curso porque tiene un historial de cursos asociado.');
+       END IF;
+ 
+   EXCEPTION
+     WHEN OTHERS THEN
+         -- Capturar cualquier error inesperado y lanzarlo con un mensaje genérico
+          RAISE_APPLICATION_ERROR(-20042, 'Error al intentar eliminar el curso: ' || SQLERRM);
+   END trg_delete_cursos;
+   /
 
 
 ---------------------store procedures----------------------------------------------------------
@@ -898,7 +895,7 @@ END mostrar_informacion_instructor;
 
 ----------------------------insert--------------------------------------------
 CREATE OR REPLACE PROCEDURE insertar_cliente_y_crear_usuario (
-    p_cedula           INT,
+    p_cedula           VARCHAR2,
     p_nombre           VARCHAR2,
     p_apellido1        VARCHAR2,
     p_apellido2        VARCHAR2,
@@ -909,24 +906,35 @@ CREATE OR REPLACE PROCEDURE insertar_cliente_y_crear_usuario (
     p_tel_habitacion   INT,
     p_contrasena       VARCHAR2
 ) AS
+    v_username VARCHAR2(30);
 BEGIN
+    -- Validar que p_cedula no sea nulo y cumpla con los requisitos de nombre de usuario
+    IF p_cedula IS NULL THEN
+        RAISE_APPLICATION_ERROR(-20002, 'La cédula no puede ser nula.');
+    ELSIF NOT REGEXP_LIKE(p_cedula, '^[A-Za-z][A-Za-z0-9_$#]*$') THEN
+        RAISE_APPLICATION_ERROR(-20003, 'La cédula debe comenzar con una letra y solo puede contener letras, números, y los caracteres especiales _, $, y #.');
+    END IF;
+
+    -- Convertir p_cedula a mayúsculas y agregar un prefijo si es necesario
+    v_username := UPPER(p_cedula);
+
     -- Inserta el cliente en la tabla cliente
     INSERT INTO cliente (
         cedula, nombre, apellido1, apellido2, direccion, e_mail, 
         fecha_inscripcion, celular, tel_habitacion
     ) VALUES (
-        p_cedula, p_nombre, p_apellido1, p_apellido2, p_direccion, 
+        v_username, p_nombre, p_apellido1, p_apellido2, p_direccion, 
         p_e_mail, p_fecha_inscripcion, p_celular, p_tel_habitacion
     );
 
     -- Crea un usuario en la base de datos con la cédula como nombre de usuario y la contraseña proporcionada
-    EXECUTE IMMEDIATE 'CREATE USER ' || p_cedula || ' IDENTIFIED BY ' || p_contrasena;
+    EXECUTE IMMEDIATE 'CREATE USER ' || v_username || ' IDENTIFIED BY ' || p_contrasena;
 
     -- Otorga privilegios básicos al nuevo usuario
-    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || p_cedula;
+    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || v_username;
 
     -- Asigna el rol 'usuario_cliente' al nuevo usuario
-    EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || p_cedula;
+    EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || v_username;
 
     COMMIT;
 EXCEPTION
@@ -964,17 +972,6 @@ END actualizar_cliente;
 /
 
 ----------------------------delete--------------------------------------------
-
-
-CREATE OR REPLACE PROCEDURE eliminar_cliente (
-    p_cedula IN cliente.cedula%TYPE
-) AS
-BEGIN
-    DELETE FROM cliente
-    WHERE cedula = p_cedula;
-    COMMIT;
-END eliminar_cliente;
-/
 
 
 CREATE OR REPLACE PROCEDURE eliminar_cliente (
@@ -1085,11 +1082,9 @@ CREATE OR REPLACE PROCEDURE sp_delete_membresia(
            RAISE_APPLICATION_ERROR(-20036, 'La membresía no existe o ya ha sido eliminada.');
      END IF;
  
-    
       NULL;  -- El procedimiento en este caso no necesita imprimir, solo eliminar.
   EXCEPTION
        WHEN OTHERS THEN
-          
           RAISE_APPLICATION_ERROR(-20037, 'Error al eliminar la membresía: ' || SQLERRM);
   END sp_delete_membresia;
   /
@@ -1343,18 +1338,48 @@ END actualizar_trabajador;
 
 ----------------------------delete--------------------------------------------
 CREATE OR REPLACE PROCEDURE eliminar_trabajador(
-    p_cod_instructor NUMBER
-) AS
-BEGIN
-    DELETE FROM trabajador WHERE cod_instructor = p_cod_instructor;
-    COMMIT; -- Opcional, dependiendo de si deseas que el cambio se confirme inmediatamente
-    DBMS_OUTPUT.PUT_LINE('Trabajador eliminado correctamente.');
-EXCEPTION
-    WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error al eliminar trabajador: ' || SQLERRM);
-        RAISE;
-END;
-/
+        p_cod_instructor NUMBER
+    ) AS
+        v_trabajador_existente NUMBER;
+        v_rutinas_existente NUMBER;
+        v_historial_existente NUMBER;
+    BEGIN
+        -- Verificar si el trabajador existe
+        SELECT COUNT(*) INTO v_trabajador_existente
+       FROM trabajador
+       WHERE cod_instructor = p_cod_instructor;
+ 
+       IF v_trabajador_existente = 0 THEN
+           RAISE_APPLICATION_ERROR(-20044, 'El trabajador no existe.');
+       END IF;
+ 
+       -- Verificar si el trabajador está relacionado en la tabla rutinas
+       SELECT COUNT(*) INTO v_rutinas_existente
+       FROM rutinas
+       WHERE instructor = p_cod_instructor;
+ 
+       IF v_rutinas_existente > 0 THEN
+           RAISE_APPLICATION_ERROR(-20038, 'No se puede eliminar el trabajador porque tiene rutinas asociadas.');
+       END IF;
+ 
+       -- Verificar si el trabajador está relacionado en la tabla historial_curso
+       SELECT COUNT(*) INTO v_historial_existente
+       FROM historial_curso
+       WHERE instructor = p_cod_instructor;
+ 
+       IF v_historial_existente > 0 THEN
+           RAISE_APPLICATION_ERROR(-20039, 'No se puede eliminar el trabajador porque tiene un historial de cursos asociado.');
+       END IF;
+ 
+       -- Eliminar el trabajador si no tiene relaciones
+       DELETE FROM trabajador WHERE cod_instructor = p_cod_instructor;
+      DBMS_OUTPUT.PUT_LINE('Trabajador eliminado correctamente.');
+   EXCEPTION
+       WHEN OTHERS THEN
+          DBMS_OUTPUT.PUT_LINE('Error al eliminar trabajador: ' || SQLERRM);
+           RAISE;
+   END eliminar_trabajador;
+   /
 
 
 
@@ -1365,12 +1390,14 @@ END;
 CREATE OR REPLACE PROCEDURE insertar_historial_curso(
     p_id_historial NUMBER,
     p_id_curso NUMBER,
-    p_cliente NUMBER,  -- Cambié el parámetro de p_id_estudiante a p_cliente para que coincida con la tabla
-    p_fecha_inscripcion DATE
+    p_cliente NUMBER,
+    p_fecha_inscripcion DATE,
+    p_horas NUMBER,
+    p_instructor NUMBER
 ) AS
 BEGIN
     INSERT INTO historial_curso (id_historial, cliente, curso, fecha, horas, instructor)
-    VALUES (p_id_historial, p_cliente, p_id_curso, p_fecha_inscripcion, NULL, NULL);  -- Asumí que horas e instructor pueden ser nulos
+    VALUES (p_id_historial, p_cliente, p_id_curso, p_fecha_inscripcion, p_horas, p_instructor);
     DBMS_OUTPUT.PUT_LINE('Historial de curso insertado correctamente.');
 END;
 /
@@ -1404,12 +1431,28 @@ END actualizar_historial_curso;
 /
 ----------------------------delete--------------------------------------------
 CREATE OR REPLACE PROCEDURE eliminar_historial_curso(
-    p_id_historial NUMBER
-) AS
-BEGIN
-    DELETE FROM historial_curso WHERE id_historial = p_id_historial;
-END;
-/
+        p_id_historial NUMBER
+    ) AS
+        v_existente NUMBER;
+    BEGIN
+        -- Verificar si el historial de curso existe
+        SELECT COUNT(*) INTO v_existente FROM historial_curso WHERE id_historial = p_id_historial;
+  
+        IF v_existente = 0 THEN
+           -- Lanzar un error si no existe
+           RAISE_APPLICATION_ERROR(-20046, 'El historial de curso que desea eliminar no existe.');
+       ELSE
+           -- Proceder con la eliminación si existe
+           DELETE FROM historial_curso WHERE id_historial = p_id_historial;
+           DBMS_OUTPUT.PUT_LINE('Historial de curso eliminado correctamente.');
+       END IF;
+ 
+   EXCEPTION
+       WHEN OTHERS THEN
+          -- Capturar y reportar cualquier otro error inesperado
+           RAISE_APPLICATION_ERROR(-20047, 'Error al eliminar el historial de curso: ' || SQLERRM);
+   END eliminar_historial_curso;
+   /
 
 
 
@@ -1456,14 +1499,29 @@ BEGIN
 END;
 /
 
-----------------------------delete--------------------------------------------
-CREATE OR REPLACE PROCEDURE eliminar_curso(
-    p_id_curso NUMBER
-) AS
-BEGIN
-    DELETE FROM cursos WHERE id_curso = p_id_curso;
-END;
-/
+---------------------------delete--------------------------------------------
+ CREATE OR REPLACE PROCEDURE eliminar_curso(
+        p_id_curso NUMBER
+    ) AS
+        v_existente NUMBER;
+    BEGIN
+        -- Verificar si el curso existe
+        SELECT COUNT(*) INTO v_existente FROM cursos WHERE id_curso = p_id_curso;
+  
+        IF v_existente = 0 THEN
+           -- Si el curso no existe, lanzar un error
+           RAISE_APPLICATION_ERROR(-20044, 'El curso que desea eliminar no existe.');
+       END IF;
+ 
+       -- Intentar eliminar el curso
+       DELETE FROM cursos WHERE id_curso = p_id_curso;
+       DBMS_OUTPUT.PUT_LINE('Curso eliminado correctamente.');
+   EXCEPTION
+       WHEN OTHERS THEN
+          -- Manejar cualquier error y devolverlo al llamador
+           RAISE_APPLICATION_ERROR(-20045, 'Error al eliminar el curso: ' || SQLERRM);
+   END eliminar_curso;
+   /
 
 
 --------------------auditoria---------------
@@ -1711,17 +1769,11 @@ SET SERVEROUTPUT ON;
 
 COMMIT;
 
---ELIMINAR_CLIENTE
---ELIMINAR_CURSO
---ELIMINAR_HISTORIAL_CURSO
---ELIMINAR_MAQUINA
---ELIMINAR_RUTINA
---ELIMINAR_TRABAJADOR
---INSERTAR_CURSO
---INSERTAR_HISTORIAL_CURSO
+
+--INSERTAR CLIENTE Y CREAR USUARIO **Revisar**
 --INSERTAR_MAQUINA
 --INSERTAR_RUTINA
 --INSERTAR_TRABAJADOR_Y_CREAR_USUARIO
---SP_DELETE_MEMBRESIA
 --SP_INSERT_MEMBRESIA
 --VER_AUDITORIAS
+
