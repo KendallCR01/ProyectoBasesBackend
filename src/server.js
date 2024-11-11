@@ -1222,6 +1222,91 @@ app.delete('/delete-membresia/:id', async (req, res) => {
     }
   });
   
+  app.delete('/delete-rutinas/:id', async (req, res) => {
+    const id = parseInt(req.params.id, 10); // Obtener el id de la rutina desde la URL
+    let connection;
+  
+    try {
+      // Establecer la conexión con la base de datos
+      connection = await oracledb.getConnection(dbConfig);
+  
+      // Llamar al procedimiento almacenado eliminar_rutina
+      await connection.execute(
+        `BEGIN eliminar_rutina(:id); END;`,
+        { id },
+        { autoCommit: true }
+      );
+  
+      // Enviar mensaje de éxito al frontend
+      res.status(200).json({ status: 'success', message: 'Rutina eliminada correctamente.' });
+  
+    } catch (error) {
+      console.error('Error al eliminar la rutina:', error);
+  
+      // Capturar errores de Oracle y enviarlos al frontend
+      if (error.message.includes('ORA-20037')) {
+        res.status(404).json({ status: 'error', message: 'La rutina que desea eliminar no existe.' });
+      } else if (error.message.includes('ORA-20038')) {
+        res.status(400).json({ status: 'error', message: 'Error al eliminar la rutina: ' + error.message });
+      } else {
+        res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
+      }
+    } finally {
+      // Cerrar la conexión
+      if (connection) {
+        try {
+          await connection.close();
+        } catch (err) {
+          console.error('Error al cerrar la conexión:', err);
+        }
+      }
+    }
+  });
+  app.delete('/delete-maquina/:id', async (req, res) => {
+    const id_maquina = parseInt(req.params.id, 10); // Obtener el id de la máquina desde la URL
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento almacenado eliminar_maquina
+        await connection.execute(
+            `BEGIN eliminar_maquina(:id_maquina); END;`,
+            { id_maquina },
+            { autoCommit: true }
+        );
+
+        // Enviar mensaje de éxito al frontend
+        res.status(200).json({ status: 'success', message: `Máquina con id ${id_maquina} eliminada correctamente.` });
+
+    } catch (error) {
+        console.error('Error al eliminar la máquina:', error);
+
+        // Capturar errores específicos y enviarlos al frontend
+        if (error.message.includes('ORA-20041')) {
+            res.status(400).json({ status: 'error', message: 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "rutinas".' });
+        } else if (error.message.includes('ORA-20042')) {
+            res.status(400).json({ status: 'error', message: 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "membresia".' });
+        } else if (error.message.includes('ORA-20039')) {
+            res.status(404).json({ status: 'error', message: 'La máquina que desea eliminar no existe.' });
+        } else if (error.message.includes('ORA-20040')) {
+            res.status(400).json({ status: 'error', message: 'Error al eliminar la máquina: ' + error.message });
+        } else {
+            res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
+        }
+    } finally {
+        // Cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
 
 
 //-------------------------TODOS LOS INSERT-------------------------

@@ -689,8 +689,6 @@ EXCEPTION
 END;
 /
 
-
-
 ---------------------triggers trabajador-----------------------------------------
 
 
@@ -753,6 +751,43 @@ EXCEPTION
         DBMS_OUTPUT.PUT_LINE('Error al eliminar el historial de curso: ' || SQLERRM);
 END;
 /
+--------------------triggers maquina----------------------------------------- 
+
+CREATE OR REPLACE TRIGGER trg_delete_maquina
+  BEFORE DELETE ON maquinas
+  FOR EACH ROW
+DECLARE
+  v_existente NUMBER;
+BEGIN
+  -- Verificar si existen registros en 'rutinas' que dependen de esta máquina
+  SELECT COUNT(*) INTO v_existente
+  FROM rutinas
+  WHERE maquina = :OLD.id_maquina;
+
+  IF v_existente > 0 THEN
+    -- Se lanza un error si la máquina está relacionada con registros en la tabla "rutinas"
+    RAISE_APPLICATION_ERROR(-20041, 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "rutinas".');
+  END IF;
+
+  -- Verificar si existen registros en 'membresia' que dependen de esta máquina
+  SELECT COUNT(*) INTO v_existente
+  FROM membresia
+  WHERE id_cliente = :OLD.id_maquina;
+
+  IF v_existente > 0 THEN
+    -- Se lanza un error si la máquina está relacionada con registros en la tabla "membresia"
+    RAISE_APPLICATION_ERROR(-20042, 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "membresia".');
+  END IF;
+
+  -- Mensaje de confirmación de eliminación
+  DBMS_OUTPUT.PUT_LINE('La máquina ha sido eliminada correctamente.');
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Asegurarse de que se capturan los errores y se devuelven correctamente
+    RAISE_APPLICATION_ERROR(-20043, 'Error al intentar eliminar la máquina: ' || SQLERRM);
+END trg_delete_maquina;
+/
+
 
 
 
@@ -1119,13 +1154,26 @@ END actualizar_rutina;
 
 ----------------------------delete--------------------------------------------
 
-CREATE OR REPLACE PROCEDURE eliminar_rutina(
-    p_id_rutina NUMBER
-) AS
-BEGIN
-    DELETE FROM rutinas WHERE id_rutina = p_id_rutina;
-END;
-/
+ CREATE OR REPLACE PROCEDURE eliminar_rutina(
+        p_id_rutina NUMBER
+    ) AS
+        v_existente NUMBER;
+   BEGIN
+        -- Verificar si la rutina existe
+        SELECT COUNT(*) INTO v_existente FROM rutinas WHERE id_rutina = p_id_rutina;
+  
+       IF v_existente = 0 THEN
+          RAISE_APPLICATION_ERROR(-20037, 'La rutina que desea eliminar no existe.');
+       END IF;
+ 
+       -- Eliminar la rutina si existe
+      DELETE FROM rutinas WHERE id_rutina = p_id_rutina;
+      DBMS_OUTPUT.PUT_LINE('Rutina eliminada correctamente.');
+   EXCEPTION
+      WHEN OTHERS THEN
+          RAISE_APPLICATION_ERROR(-20038, 'Error al eliminar la rutina: ' || SQLERRM);
+  END eliminar_rutina;
+ /
 
 
 
@@ -1181,11 +1229,26 @@ END actualizar_maquina;
 /
 ----------------------------delete--------------------------------------------
 CREATE OR REPLACE PROCEDURE eliminar_maquina(
-    p_id_maquina NUMBER
+  p_id_maquina IN NUMBER
 ) AS
+  v_existente NUMBER;
 BEGIN
-    DELETE FROM maquinas WHERE id_maquina = p_id_maquina;
-END;
+  -- Verificar si la máquina existe
+  SELECT COUNT(*) INTO v_existente FROM maquinas WHERE id_maquina = p_id_maquina;
+
+  IF v_existente = 0 THEN
+    RAISE_APPLICATION_ERROR(-20039, 'La máquina que desea eliminar no existe.');
+  END IF;
+
+  -- Eliminar la máquina si existe
+  DELETE FROM maquinas WHERE id_maquina = p_id_maquina;
+
+  COMMIT;  -- Asegurarse de confirmar la eliminación
+  DBMS_OUTPUT.PUT_LINE('Máquina eliminada correctamente.');
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE_APPLICATION_ERROR(-20040, 'Error al eliminar la máquina: ' || SQLERRM);
+END eliminar_maquina;
 /
 
 
@@ -1610,6 +1673,10 @@ VALUES (1, 'Máquina Cardio', 'Disponible', 'Alta');
  
 INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
 VALUES (2, 'Máquina Pesas', 'En reparación', 'Media');
+
+INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
+VALUES (3, 'Maquina correr', 'En reparación', 'facil');
+
  
 -- Insertar registros en la tabla trabajador
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
