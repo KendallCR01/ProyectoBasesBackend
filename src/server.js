@@ -1656,7 +1656,7 @@ app.post('/insertar-historial-curso', async (req, res) => {
     }
 });*/
 
-app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
+/*app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
     const { cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion, contrasena } = req.body;
 
     // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
@@ -1723,7 +1723,142 @@ app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
             }
         }
     }
+});*/
+
+app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
+    const { cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion, contrasena } = req.body;
+
+    // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
+    const usuario = `user_${cedula}`;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos como super_user
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar el cliente
+        await connection.execute(
+            `BEGIN super_user.insertar_cliente(
+                :cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, 
+                TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion
+            ); END;`,
+            {
+                cedula: cedula,
+                nombre: nombre,
+                apellido1: apellido1,
+                apellido2: apellido2,
+                direccion: direccion,
+                e_mail: e_mail,
+                fecha_inscripcion: fecha_inscripcion,
+                celular: celular,
+                tel_habitacion: tel_habitacion
+            }
+        );
+
+        // Cerrar la conexión como super_user
+        await connection.close();
+
+        // Establecer la conexión con la base de datos como SYSDBA
+        connection = await oracledb.getConnection(sysdbaConfig);
+
+        // Llamar al procedimiento para crear el usuario
+        await connection.execute(
+            `BEGIN
+                crear_usuario(:usuario, :contrasena);
+            END;`,
+            {
+                usuario: usuario,
+                contrasena: contrasena
+            }
+        );
+
+        res.status(200).json({ message: 'Cliente y usuario creados exitosamente' });
+    } catch (err) {
+        console.error('Error al insertar el cliente y crear el usuario:', err);
+        res.status(500).json({
+            message: 'Error al insertar el cliente y crear el usuario',
+            error: err.message
+        });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
 });
+
+
+app.post('/insertar-trabajador-y-crear-usuario_trabajador', async (req, res) => {
+    const { cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool, contrasena } = req.body;
+
+    // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
+    const usuario = `user_${cod_instructor}`;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos como super_user
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar el trabajador
+        await connection.execute(
+            `BEGIN super_user.insertar_trabajador(
+                :cod_instructor, :nombre, :apellido1, :apellido2, :direccion, :e_mail, 
+                :tel_cel, :tel_habitacion, TO_DATE(:fecha_contratacion, 'YYYY-MM-DD'), :rool
+            ); END;`,
+            {
+                cod_instructor: cod_instructor,
+                nombre: nombre,
+                apellido1: apellido1,
+                apellido2: apellido2,
+                direccion: direccion,
+                e_mail: e_mail,
+                tel_cel: tel_cel,
+                tel_habitacion: tel_habitacion,
+                fecha_contratacion: fecha_contratacion,
+                rool: rool
+            }
+        );
+
+        // Cerrar la conexión como super_user
+        await connection.close();
+
+        // Establecer la conexión con la base de datos como SYSDBA
+        connection = await oracledb.getConnection(sysdbaConfig);
+
+        // Llamar al procedimiento para crear el usuario
+        await connection.execute(
+            `BEGIN
+                crear_usuario_trabajador(:usuario, :contrasena);
+            END;`,
+            {
+                usuario: usuario,
+                contrasena: contrasena
+            }
+        );
+
+        res.status(200).json({ message: 'Trabajador y usuario creados exitosamente' });
+    } catch (err) {
+        console.error('Error al insertar el trabajador y crear el usuario:', err);
+        res.status(500).json({
+            message: 'Error al insertar el trabajador y crear el usuario',
+            error: err.message
+        });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
 
 app.post('/insert-membresia', async (req, res) => {
     const { id, id_cliente, monto, estado, fecha } = req.body; // Obtener los datos del cuerpo de la solicitud
