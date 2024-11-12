@@ -967,35 +967,44 @@ app.put('/actualizar-rutina', async (req, res) => {
     let connection;
 
     try {
+        // Establecer la conexión con la base de datos
         connection = await oracledb.getConnection(dbConfig);
 
+        // Llamar al procedimiento para actualizar la rutina
         const result = await connection.execute(
-            `BEGIN 
-                super_user.actualizar_rutina(:id_rutina, :cliente, :instructor, :maquina, 
-                                TO_DATE(:fecha, 'YYYY-MM-DD'), :horas, :resultado); 
-             END;`,
+            `BEGIN
+                super_user.actualizar_rutina(
+                    :id_rutina, :cliente, :instructor, :maquina, :fecha, :horas, :resultado
+                );
+            END;`,
             {
                 id_rutina: id_rutina,
                 cliente: cliente,
                 instructor: instructor,
                 maquina: maquina,
-                fecha: fecha,
+                fecha: fecha, // Asegúrate de que la fecha esté en formato 'YYYY-MM-DD'
                 horas: horas,
                 resultado: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
             }
         );
 
-        // Verificar el resultado del procedimiento
-        if (result.outBinds.resultado === 1) {
-            res.json({ message: 'Rutina actualizada con éxito' });
-        } else {
-            res.status(404).json({ message: 'Rutina no encontrada' });
-        }
+        const resultado = result.outBinds.resultado;
 
+        if (resultado === 1) {
+            res.status(200).json({ message: 'Rutina actualizada exitosamente' });
+        } else if (resultado === 0) {
+            res.status(404).json({ message: 'Rutina no encontrada' });
+        } else {
+            res.status(500).json({ message: 'Error al actualizar la rutina' });
+        }
     } catch (err) {
         console.error('Error al actualizar la rutina:', err);
-        res.status(500).json({ message: 'Error al actualizar la rutina', error: err.message });
+        res.status(500).json({
+            message: 'Error al actualizar la rutina',
+            error: err.message
+        });
     } finally {
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();

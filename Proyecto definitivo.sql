@@ -1101,7 +1101,7 @@ CREATE OR REPLACE PROCEDURE actualizar_rutina(
     p_cliente IN rutinas.cliente%TYPE,
     p_instructor IN rutinas.instructor%TYPE,
     p_maquina IN rutinas.maquina%TYPE,
-    p_fecha IN rutinas.fecha%TYPE,
+    p_fecha IN VARCHAR2, -- Cambiar a VARCHAR2 para manejar la conversión de fecha
     p_horas IN rutinas.horas%TYPE,
     p_resultado OUT NUMBER
 ) AS
@@ -1110,7 +1110,7 @@ BEGIN
     SET cliente = p_cliente,
         instructor = p_instructor,
         maquina = p_maquina,
-        fecha = p_fecha,
+        fecha = TO_DATE(p_fecha, 'YYYY-MM-DD'), -- Convertir la fecha al formato adecuado
         horas = p_horas
     WHERE id_rutina = p_id_rutina;
     
@@ -1124,9 +1124,8 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN
         p_resultado := -1;  -- Error en la actualización
-        ROLLBACK;
-        RAISE;
-END actualizar_rutina;
+        RAISE_APPLICATION_ERROR(-20001, 'Error al actualizar la rutina: ' || SQLERRM);
+END;
 /
 
 ----------------------------delete--------------------------------------------
