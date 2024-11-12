@@ -1531,9 +1531,9 @@ END;
 
 
 --------------------auditoria---------------
-CREATE OR REPLACE PROCEDURE ver_auditorias AS
+CREATE OR REPLACE PROCEDURE ver_auditorias (p_cursor OUT SYS_REFCURSOR) AS
 BEGIN
-    FOR auditoria IN (
+    OPEN p_cursor FOR
         SELECT 
             username,        
             obj_name,           
@@ -1545,15 +1545,7 @@ BEGIN
         WHERE 
             obj_name IN ('CLIENTE', 'MEMBRESIA', 'RUTINAS', 'MAQUINAS', 'TRABAJADOR', 'HISTORIAL_CURSO', 'CURSOS')
         ORDER BY 
-            timestamp DESC
-    ) LOOP
-        -- Acceder a las columnas del cursor sin usar índice explícito
-        DBMS_OUTPUT.PUT_LINE('Usuario: ' || auditoria.username || 
-                             ', Tabla: ' || auditoria.obj_name || 
-                             ', Acción: ' || auditoria.action_name || 
-                             ', Fecha: ' || auditoria.timestamp || 
-                             ', Código Retorno: ' || auditoria.returncode);
-    END LOOP;
+            timestamp DESC;
 END;
 /
 
@@ -1832,8 +1824,5 @@ SET SERVEROUTPUT ON;
 COMMIT;
 
 
---INSERTAR_MAQUINA
---INSERTAR_RUTINA
---INSERTAR_TRABAJADOR_Y_CREAR_USUARIO
---VER_AUDITORIAS
+--Forma de mostarla las auditorias
 

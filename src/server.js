@@ -1907,6 +1907,137 @@ app.post('/insert-membresia', async (req, res) => {
     }
 });
 
+// Insertar una máquina
+app.post('/insertar-maquina', async (req, res) => {
+    const { id_maquina, descripcion, estado, dificultad } = req.body;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar la máquina
+        await connection.execute(
+            `BEGIN 
+                super_user.insertar_maquina(:id_maquina, :descripcion, :estado, :dificultad); 
+             END;`,
+            {
+                id_maquina: id_maquina,
+                descripcion: descripcion,
+                estado: estado,
+                dificultad: dificultad
+            },
+            { autoCommit: true }
+        );
+
+        res.json({ message: 'Máquina insertada correctamente' });
+
+    } catch (err) {
+        console.error('Error al insertar la máquina:', err);
+        res.status(500).json({ message: 'Error al insertar la máquina', error: err.message });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+// Insertar una rutina
+app.post('/insertar-rutina', async (req, res) => {
+    const { id_rutina, cliente, instructor, maquina, fecha, horas } = req.body;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar la rutina
+        await connection.execute(
+            `BEGIN 
+                super_user.insertar_rutina(:id_rutina, :cliente, :instructor, :maquina, TO_DATE(:fecha, 'YYYY-MM-DD'), :horas); 
+             END;`,
+            {
+                id_rutina: id_rutina,
+                cliente: cliente,
+                instructor: instructor,
+                maquina: maquina,
+                fecha: fecha,
+                horas: horas
+            },
+            { autoCommit: true }
+        );
+
+        res.json({ message: 'Rutina insertada correctamente' });
+
+    } catch (err) {
+        console.error('Error al insertar la rutina:', err);
+        res.status(500).json({ message: 'Error al insertar la rutina', error: err.message });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+/*****Auditorias*****/
+
+
+// Ver auditorías
+app.get('/ver-auditorias', async (req, res) => {
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para ver las auditorías
+        const result = await connection.execute(
+            `BEGIN 
+                super_user.ver_auditorias(:cursor); 
+             END;`,
+            {
+                cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+            }
+        );
+
+        // Obtener los resultados del cursor
+        const resultSet = result.outBinds.cursor;
+        const rows = [];
+
+        let row;
+        while ((row = await resultSet.getRow())) {
+            rows.push(row);
+        }
+
+        await resultSet.close();
+
+        res.json(rows);
+
+    } catch (err) {
+        console.error('Error al ver las auditorías:', err);
+        res.status(500).json({ message: 'Error al ver las auditorías', error: err.message });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
 // Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
