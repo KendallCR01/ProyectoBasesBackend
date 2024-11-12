@@ -39,7 +39,7 @@ conn super_user/root@localhost/XE;
 ---Aqui tambien dr agrega el tablespace al final creo..----
 
 CREATE TABLE cliente (
-    cedula VARCHAR2(30) PRIMARY KEY,
+    cedula INT PRIMARY KEY,
     nombre VARCHAR2(30),
     apellido1 VARCHAR2(30),
     apellido2 VARCHAR2(30),
@@ -52,7 +52,7 @@ CREATE TABLE cliente (
 
 CREATE TABLE membresia (
     id INT PRIMARY KEY,
-    id_cliente VARCHAR2(30),
+    id_cliente INT,
     monto INT,
     estado VARCHAR2(30),
     fecha DATE,
@@ -82,7 +82,7 @@ CREATE TABLE trabajador (
 
 CREATE TABLE rutinas (
     id_rutina INT PRIMARY KEY,
-    cliente VARCHAR2(30),
+    cliente INT,
     instructor INT,
     maquina INT,
     fecha DATE,
@@ -102,7 +102,7 @@ CREATE TABLE cursos (
 
 CREATE TABLE historial_curso (
     id_historial INT PRIMARY KEY,
-    cliente VARCHAR2(30),
+    cliente INT,
     instructor INT,
     curso INT,
     fecha DATE,
@@ -556,7 +556,6 @@ BEGIN
     IF :OLD.id_historial != :NEW.id_historial THEN
         RAISE_APPLICATION_ERROR(-20027, 'No se permite actualizar el ID del historial.');
     ELSIF :OLD.cliente != :NEW.cliente THEN
-    ELSIF :OLD.cliente != :NEW.cliente THEN
         RAISE_APPLICATION_ERROR(-20028, 'No se permite actualizar el cliente en el historial.');
     ELSIF :OLD.instructor != :NEW.instructor THEN
         RAISE_APPLICATION_ERROR(-20029, 'No se permite actualizar el instructor en el historial.');
@@ -646,7 +645,7 @@ END;
 /
 
 
----------------------triggers membresia----------------------------------------- 
+---------------------triggers membresia-----------------------------------------
 
 
 
@@ -751,39 +750,39 @@ CREATE OR REPLACE TRIGGER trg_delete_historial_curso
 --------------------triggers maquina----------------------------------------- 
 
 CREATE OR REPLACE TRIGGER trg_delete_maquina
-  BEFORE DELETE ON maquinas
-  FOR EACH ROW
+BEFORE DELETE ON maquinas
+FOR EACH ROW
 DECLARE
-  v_existente NUMBER;
+    v_relacionado_rutinas NUMBER := 0;
+    v_relacionado_membresia NUMBER := 0;
 BEGIN
-  -- Verificar si existen registros en 'rutinas' que dependen de esta máquina
-  SELECT COUNT(*) INTO v_existente
-  FROM rutinas
-  WHERE maquina = :OLD.id_maquina;
+    -- Verificar si existen registros en 'rutinas' que dependen de esta máquina
+    SELECT COUNT(*) INTO v_relacionado_rutinas
+    FROM rutinas
+    WHERE maquina = :OLD.id_maquina;
 
-  IF v_existente > 0 THEN
-    -- Se lanza un error si la máquina está relacionada con registros en la tabla "rutinas"
-    RAISE_APPLICATION_ERROR(-20041, 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "rutinas".');
-  END IF;
+    IF v_relacionado_rutinas > 0 THEN
+        -- Lanzar error si la máquina está relacionada con registros en la tabla "rutinas"
+        RAISE_APPLICATION_ERROR(-20041, 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "rutinas".');
+    END IF;
 
-  -- Verificar si existen registros en 'membresia' que dependen de esta máquina
-  SELECT COUNT(*) INTO v_existente
-  FROM membresia
-  WHERE id_cliente = :OLD.id_maquina;
+    -- Verificar si existen registros en 'membresia' que dependen de esta máquina
+    SELECT COUNT(*) INTO v_relacionado_membresia
+    FROM membresia
+    WHERE id_cliente = :OLD.id_maquina;
 
-  IF v_existente > 0 THEN
-    -- Se lanza un error si la máquina está relacionada con registros en la tabla "membresia"
-    RAISE_APPLICATION_ERROR(-20042, 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "membresia".');
-  END IF;
+    IF v_relacionado_membresia > 0 THEN
+        -- Lanzar error si la máquina está relacionada con registros en la tabla "membresia"
+        RAISE_APPLICATION_ERROR(-20042, 'No se puede eliminar la máquina porque está relacionada con registros en la tabla "membresia".');
+    END IF;
 
-  -- Mensaje de confirmación de eliminación
-  DBMS_OUTPUT.PUT_LINE('La máquina ha sido eliminada correctamente.');
 EXCEPTION
-  WHEN OTHERS THEN
-    -- Asegurarse de que se capturan los errores y se devuelven correctamente
-    RAISE_APPLICATION_ERROR(-20043, 'Error al intentar eliminar la máquina: ' || SQLERRM);
+    WHEN OTHERS THEN
+        -- Capturar cualquier error inesperado y lanzarlo con un mensaje genérico
+        RAISE_APPLICATION_ERROR(-20043, 'Error al intentar eliminar la máquina: ' || SQLERRM);
 END trg_delete_maquina;
 /
+
 
 
 
@@ -895,7 +894,7 @@ END mostrar_informacion_instructor;
 
 ----------------------------insert--------------------------------------------
 CREATE OR REPLACE PROCEDURE insertar_cliente_y_crear_usuario (
-    p_cedula           VARCHAR2,
+    p_cedula           INT,
     p_nombre           VARCHAR2,
     p_apellido1        VARCHAR2,
     p_apellido2        VARCHAR2,
@@ -1390,7 +1389,7 @@ CREATE OR REPLACE PROCEDURE eliminar_trabajador(
 CREATE OR REPLACE PROCEDURE insertar_historial_curso(
     p_id_historial NUMBER,
     p_id_curso NUMBER,
-    p_cliente NUMBER,
+    p_cliente INT,
     p_fecha_inscripcion DATE,
     p_horas NUMBER,
     p_instructor NUMBER

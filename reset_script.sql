@@ -19,7 +19,7 @@ DROP ROLE soporte;
 --DROP USER super_user CASCADE;
 
 -- Eliminar tablespace
-DROP TABLESPACE gimnasio INCLUDING CONTENTS AND DATAFILES;
+--DROP TABLESPACE gimnasio INCLUDING CONTENTS AND DATAFILES;
 
 -- Eliminar auditorías
 --ALTER SYSTEM SET audit_trail=NONE SCOPE=SPFILE;
