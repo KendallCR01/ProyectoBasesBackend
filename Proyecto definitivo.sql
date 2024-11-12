@@ -44,7 +44,7 @@ CREATE TABLE cliente (
     apellido1 VARCHAR2(30),
     apellido2 VARCHAR2(30),
     direccion VARCHAR2(30),
-    e_mail VARCHAR2(30),
+    e_mail VARCHAR2(60),
     fecha_inscripcion DATE,
     celular INT,
     tel_habitacion INT
@@ -61,7 +61,7 @@ CREATE TABLE membresia (
 
 CREATE TABLE maquinas (
     id_maquina INT PRIMARY KEY,
-    descripcion VARCHAR2(30),
+    descripcion VARCHAR2(50),
     estado VARCHAR2(30),
     dificultad VARCHAR2(30)
 )TABLESPACE gimnasio; 
@@ -96,8 +96,8 @@ CREATE TABLE rutinas (
 CREATE TABLE cursos (
     id_curso INT PRIMARY KEY,
     descripcion VARCHAR2(50),
-    horario VARCHAR2(20), 
-    disponibilidad VARCHAR2(10)
+    horario VARCHAR2(50), 
+    disponibilidad VARCHAR2(50)
 )TABLESPACE gimnasio; 
 
 CREATE TABLE historial_curso (
@@ -129,20 +129,13 @@ ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
 
 CREATE ROLE usuario_cliente;
 
--- Permisos para que los clientes puedan inscribirse y desinscribirse
+
 GRANT INSERT, DELETE ON cliente TO usuario_cliente;
-
--- Permisos de solo lectura para ver su información personal y de inscripción
 GRANT SELECT ON cliente TO usuario_cliente;
-
--- Permisos para que puedan ver cursos
 GRANT SELECT ON cursos TO usuario_cliente;
-
--- Permitir al cliente gestionar su propio usuario
 GRANT UPDATE ON cliente TO usuario_cliente;
-
-
 GRANT SELECT ON historial_curso TO usuario_cliente;
+GRANT CREATE SESSION TO usuario_cliente;
 
 CREATE ROLE instructor;
 
@@ -152,26 +145,16 @@ GRANT SELECT ON cliente TO instructor;
 GRANT SELECT ON cursos TO instructor;
 GRANT SELECT ON rutinas TO instructor;
 GRANT SELECT ON historial_curso TO instructor;
-
--- Permisos de modificación para dar mantenimiento (INSERT, UPDATE, DELETE)
 GRANT INSERT, UPDATE, DELETE ON cliente TO instructor;
 GRANT INSERT, UPDATE, DELETE ON Membresia TO instructor;
 GRANT INSERT, UPDATE, DELETE ON cursos TO instructor;
 GRANT INSERT, UPDATE, DELETE ON rutinas TO instructor;
 GRANT INSERT, UPDATE, DELETE ON historial_curso TO instructor;
-
+GRANT CREATE SESSION TO instructor;
 
 -- Crear el rol soporte
 CREATE ROLE soporte;
-
--- Otorgar privilegios de acceso completo (SELECT, INSERT, UPDATE, DELETE) a todas las tablas para el rol soporte
-GRANT SELECT, INSERT, UPDATE, DELETE ON cliente TO soporte;
-GRANT SELECT, INSERT, UPDATE, DELETE ON membresia TO soporte;
-GRANT SELECT, INSERT, UPDATE, DELETE ON rutinas TO soporte;
-GRANT SELECT, INSERT, UPDATE, DELETE ON maquinas TO soporte;
-GRANT SELECT, INSERT, UPDATE, DELETE ON trabajador TO soporte;
-GRANT SELECT, INSERT, UPDATE, DELETE ON historial_curso TO soporte;
-GRANT SELECT, INSERT, UPDATE, DELETE ON cursos TO soporte;
+GRANT DBA TO soporte;
 
 
 
@@ -1460,40 +1443,52 @@ CREATE OR REPLACE PROCEDURE eliminar_historial_curso(
 
 
 ----------------------------insert--------------------------------------------
-CREATE OR REPLACE PROCEDURE insertar_curso(
-    p_id_curso NUMBER,
+
+create or replace PROCEDURE insertar_curso(
     p_descripcion VARCHAR2,
     p_horario VARCHAR2,
     p_disponibilidad VARCHAR2
 ) AS
 BEGIN
+    -- Insertar el curso, generando automáticamente el id_curso con la secuencia
     INSERT INTO cursos (id_curso, descripcion, horario, disponibilidad)
-    VALUES (p_id_curso, p_descripcion, p_horario, p_disponibilidad);
+    VALUES (seq_id_curso.NEXTVAL, p_descripcion, p_horario, p_disponibilidad);
+
+    -- Realizar commit para asegurar que los cambios se guarden
+    COMMIT;
+
     DBMS_OUTPUT.PUT_LINE('Curso insertado correctamente.');
 END;
 /
 
+
 ----------------------------update--------------------------------------------
-CREATE OR REPLACE PROCEDURE actualizar_curso(
+CREATE OR REPLACE PROCEDURE editar_curso(
     p_id_curso NUMBER,
     p_descripcion VARCHAR2,
     p_horario VARCHAR2,
     p_disponibilidad VARCHAR2,
-    p_resultado OUT NUMBER
 ) AS
 BEGIN
-    UPDATE cursos
-    SET descripcion = p_descripcion,
-        horario = p_horario,
-        disponibilidad = p_disponibilidad
-    WHERE id_curso = p_id_curso;
-    
-    IF SQL%ROWCOUNT > 0 THEN
-        p_resultado := 1;  -- Se actualizó el curso
-    ELSE
-        p_resultado := 0;  -- No se encontró el curso
+    IF p_descripcion IS NOT NULL THEN
+        UPDATE cursos
+        SET descripcion = p_descripcion
+        WHERE id_curso = p_id_curso;
     END IF;
-    
+
+    -- Actualizar el horario si se proporciona
+    IF p_horario IS NOT NULL THEN
+        UPDATE cursos
+        SET horario = p_horario
+        WHERE id_curso = p_id_curso;
+    END IF;
+
+    -- Actualizar la disponibilidad si se proporciona
+    IF p_disponibilidad IS NOT NULL THEN
+        UPDATE cursos
+        SET disponibilidad = p_disponibilidad
+        WHERE id_curso = p_id_curso;
+    END IF;
     COMMIT;
 END;
 /
@@ -1706,6 +1701,36 @@ BEGIN
 END;
 /
 
+
+CREATE OR REPLACE PROCEDURE validate_user_role(
+    p_username IN VARCHAR2,    -- Nombre del usuario a verificar
+    p_role OUT VARCHAR2,       -- Rol que el usuario tendrá, en este caso 'INSTRUCTOR' si lo tiene
+    p_status OUT VARCHAR2      -- Estado de la autenticación
+) AS
+    role_exists INTEGER;       -- Variable para verificar si el usuario tiene el rol requerido
+BEGIN
+     -- Verificar si el usuario tiene el rol 'INSTRUCTOR'
+    SELECT COUNT(*)
+    INTO role_exists
+    FROM DBA_ROLE_PRIVS
+    WHERE grantee = UPPER(p_username)
+    AND granted_role = 'INSTRUCTOR'; -- Fijamos el rol 'INSTRUCTOR' directamente en la consulta
+
+    IF role_exists > 0 THEN
+        p_status := 'Usuario autenticado correctamente y rol verificado';
+        p_role := 'INSTRUCTOR';  -- Asignamos 'INSTRUCTOR' si el usuario tiene ese rol
+    ELSE
+        p_status := 'Usuario no encontrado o no es instructor';
+        p_role := NULL;  -- Si no tiene el rol, asignamos NULL
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        p_status := 'Error en la validación de usuario o rol';
+        p_role := NULL;  -- En caso de error, dejamos NULL el rol
+END validate_user_role;
+
+
 -- Inserts para probar
 
 
@@ -1763,6 +1788,23 @@ VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 5);
  
 INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
 VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 4);
+
+ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
+
+CREATE USER cbum2 IDENTIFIED BY 12345;
+GRANT instructor TO cbum2;
+GRANT EXECUTE ANY PROCEDURE TO cbum2;
+GRANT CREATE SESSION TO cbum2;
+
+
+
+ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
+
+CREATE USER user_123 IDENTIFIED BY 12345;
+GRANT instructor TO user_123;
+GRANT EXECUTE ANY PROCEDURE TO user_123;
+GRANT CREATE SESSION TO user_123;
+
 
 SET SERVEROUTPUT ON;
 

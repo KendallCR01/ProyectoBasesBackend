@@ -70,6 +70,69 @@ app.get('/buscar-membresia/:id', async (req, res) => {
 });
 
 
+app.post('/login', async (req, res) => {
+    let { user, password } = req.body;
+
+    if (!user || !password) {
+        return res.status(400).json({ message: 'El usuario y la contraseña son obligatorios' });
+    }
+
+    // Agregar "user_" al nombre de usuario
+    const usuario = `user_${user}`;
+
+    let connection;
+    try {
+        // Intentar conectar con los parámetros proporcionados
+        connection = await oracledb.getConnection({
+            user: usuario,
+            password: password,
+            connectString: dbConfig.connectString
+        });
+
+        console.log('Conexión exitosa con la base de datos');
+        dbConfig.user = usuario;
+        dbConfig.password = password;
+
+        // Llamar al procedimiento para obtener el resultado (un solo valor)
+        const result = await connection.execute(
+            `BEGIN super_user.obtener_usuario(:p_id, :p_roles); END;`,  // Usar p_id en lugar de :user
+            {
+                p_id: user, // Asignamos el parámetro correctamente
+                p_roles: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+            }
+        );
+        const status = 'Usuario autenticado correctamente y rol verificado';
+        // Obtener el cursor con el valor
+        const rows = await result.outBinds.p_roles.getRows(); // Obtener las filas del cursor
+
+        // Si se encuentran resultados, devolver el valor
+        if (rows.length > 0) {
+            const role = rows[0][0]; // Solo tomamos el primer valor del cursor
+            return res.status(200).json({
+                message: status,
+                role: role // Devolvemos el valor único obtenido
+            });
+        } else {
+            // Si no se encuentra ningún rol
+            return res.status(404).json({ Estado: 'No se encontraron roles para este usuario' });
+        }
+    } catch (err) {
+        console.error('Error al conectar con la base de datos:', err);
+        return res.status(500).json({
+            message: 'Error al conectar con la base de datos',
+            error: err.message
+        });
+    } finally {
+        // Cerrar la conexión si fue establecida
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
 
 // Busca rutina por id
 app.get('/buscar-rutina/:id', async (req, res) => {
@@ -121,9 +184,6 @@ app.get('/buscar-rutina/:id', async (req, res) => {
         }
     }
 });
-
-
-
 
 //Busca membresia por id
 app.get('/buscar-maquina/:id', async (req, res) => {
@@ -382,6 +442,23 @@ app.get('/obtener-todos-clientes', async (req, res) => {
         }
     }
 });
+
+
+app.post('/logout', async (req, res) => { 
+
+    try {
+        // Verifica que el usuario tiene una conexión activa
+
+        dbConfig.user = 'super_user';
+        dbConfig.password = 'root';
+
+    } catch (error) {
+        console.error('Error al cerrar la sesión del usuario:', error);
+        res.status(500).json({ message: 'Error al cerrar la sesión del usuario.' });
+    }
+});
+
+
 
 app.get('/obtener-todas-membresias', async (req, res) => {
     let connection;
@@ -1315,7 +1392,7 @@ app.delete('/delete-cursos/:id', async (req, res) => {
         connection = await oracledb.getConnection(dbConfig);
 
         await connection.execute(
-            `BEGIN eliminar_curso(:id); END;`,
+            `BEGIN super_user.eliminar_curso(:id); END;`,
             { id },
             { autoCommit: true }
         );
@@ -1433,7 +1510,7 @@ app.delete('/delete-trabajador/:id', async (req, res) => {
 
 // Insertar un curso
 app.post('/insertar-curso', async (req, res) => {
-    const { id_curso, descripcion, horario, disponibilidad } = req.body;
+    const { descripcion, horario, disponibilidad } = req.body;
     let connection;
 
     try {
@@ -1441,10 +1518,9 @@ app.post('/insertar-curso', async (req, res) => {
 
         await connection.execute(
             `BEGIN 
-                insertar_curso(:id_curso, :descripcion, :horario, :disponibilidad); 
+                super_user.insertar_curso(:descripcion, :horario, :disponibilidad); 
              END;`,
             {
-                id_curso: id_curso,
                 descripcion: descripcion,
                 horario: horario,
                 disponibilidad: disponibilidad
