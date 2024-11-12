@@ -1377,9 +1377,12 @@ CREATE OR REPLACE PROCEDURE eliminar_trabajador(
 
 
 ----------------------------insert--------------------------------------------
+CREATE SEQUENCE seq_id_historial_curso
+START WITH 5
+INCREMENT BY 1
+NOCACHE;
+
 CREATE OR REPLACE PROCEDURE insertar_historial_curso(
-    p_id_historial NUMBER,
-    p_id_curso NUMBER,
     p_cliente INT,
     p_fecha_inscripcion DATE,
     p_horas NUMBER,
@@ -1387,7 +1390,7 @@ CREATE OR REPLACE PROCEDURE insertar_historial_curso(
 ) AS
 BEGIN
     INSERT INTO historial_curso (id_historial, cliente, curso, fecha, horas, instructor)
-    VALUES (p_id_historial, p_cliente, p_id_curso, p_fecha_inscripcion, p_horas, p_instructor);
+    VALUES (seq_id_historial_curso, p_cliente, p_id_curso, p_fecha_inscripcion, p_horas, p_instructor);
     DBMS_OUTPUT.PUT_LINE('Historial de curso insertado correctamente.');
 END;
 /
