@@ -77,7 +77,7 @@ CREATE TABLE trabajador (
     tel_habitacion INT,
     fecha_contratacion DATE,
     rool VARCHAR2(30),
-    CONSTRAINT chk_rool CHECK (rool IN ('entrenador', 'soporte'))
+    CONSTRAINT chk_rool CHECK (rool IN ('instructor', 'soporte'))
 )TABLESPACE gimnasio; 
 
 CREATE TABLE rutinas (
@@ -1443,6 +1443,10 @@ CREATE OR REPLACE PROCEDURE eliminar_historial_curso(
 
 
 ----------------------------insert--------------------------------------------
+CREATE SEQUENCE seq_id_curso
+START WITH 5
+INCREMENT BY 1
+NOCACHE;
 
 create or replace PROCEDURE insertar_curso(
     p_descripcion VARCHAR2,
@@ -1455,7 +1459,7 @@ BEGIN
     VALUES (seq_id_curso.NEXTVAL, p_descripcion, p_horario, p_disponibilidad);
 
     -- Realizar commit para asegurar que los cambios se guarden
-    COMMIT;
+    -- COMMIT;
 
     DBMS_OUTPUT.PUT_LINE('Curso insertado correctamente.');
 END;
@@ -1729,6 +1733,45 @@ EXCEPTION
         p_status := 'Error en la validación de usuario o rol';
         p_role := NULL;  -- En caso de error, dejamos NULL el rol
 END validate_user_role;
+/
+
+
+
+CREATE OR REPLACE PROCEDURE obtener_usuario (
+    p_id IN INT,  -- ID de cliente o trabajador
+    p_resultado OUT SYS_REFCURSOR  -- Cursor de la búsqueda
+) AS
+BEGIN
+    -- Intentar buscar en la tabla cliente
+    DECLARE
+        v_role VARCHAR2(30);
+    BEGIN
+        -- Intentar obtener 'cliente' si se encuentra en la tabla cliente
+        SELECT 'cliente' 
+        INTO v_role
+        FROM cliente
+        WHERE cedula = p_id;
+        
+        -- Si se encuentra en la tabla cliente, se abre el cursor con el valor 'cliente'
+        OPEN p_resultado FOR
+        SELECT v_role AS role FROM dual;
+        RETURN;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            -- Si no se encuentra en cliente, buscar en la tabla trabajador
+            NULL;  -- No hacer nada, continuar con el siguiente bloque
+    END;
+
+    -- Intentar buscar en la tabla trabajador
+    OPEN p_resultado FOR
+        SELECT rool AS role
+        FROM trabajador
+        WHERE cod_instructor = p_id;
+    
+    -- Si se encuentra en la tabla trabajador, devolver el cursor con el rol
+    RETURN;
+END;
+/
 
 
 -- Inserts para probar
@@ -1736,11 +1779,11 @@ END validate_user_role;
 
 -- Insertar registros en la tabla cliente
 INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
-VALUES (123456, 'Juan', 'Pérez', 'Gómez', 'Calle Ficticia 123', 'juan.perez@email.com', TO_DATE('2024-01-15', 'YYYY-MM-DD'), 987654321, 123456789);
+VALUES (123456, 'Juan', 'Perez', 'Gomez', 'Calle Ficticia 123', 'juan.perez@email.com', TO_DATE('2024-01-15', 'YYYY-MM-DD'), 987654321, 123456789);
 
  
 INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
-VALUES (654321, 'Ana', 'Martínez', 'Lopez', 'Avenida Central 456', 'ana.martinez@email.com', TO_DATE('2024-02-20', 'YYYY-MM-DD'), 987654322, 123456788);
+VALUES (654321, 'Ana', 'Martinez', 'Lopez', 'Avenida Central 456', 'ana.martinez@email.com', TO_DATE('2024-02-20', 'YYYY-MM-DD'), 987654322, 123456788);
  
 -- Insertar registros en la tabla membresia
 INSERT INTO membresia (id, id_cliente, monto, estado, fecha)
@@ -1751,22 +1794,25 @@ VALUES (2, 654321, 120, 'Inactiva', TO_DATE('2024-02-20', 'YYYY-MM-DD'));
  
 -- Insertar registros en la tabla maquinas
 INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-VALUES (1, 'Máquina Cardio', 'Disponible', 'Alta');
+VALUES (1, 'Maquina Cardio', 'Disponible', 'Alta');
  
 INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-VALUES (2, 'Máquina Pesas', 'En reparación', 'Media');
+VALUES (2, 'Maquina Pesas', 'En reparacion', 'Media');
 
 INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-VALUES (3, 'Maquina correr', 'En reparación', 'facil');
+VALUES (3, 'Maquina correr', 'En reparacion', 'facil');
 
  
 -- Insertar registros en la tabla trabajador
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (1, 'Carlos', 'Gonzalez', 'Sanchez', 'Calle Ficticia 789', 'carlos.gonzalez@email.com', 987654323, 123456787, TO_DATE('2023-11-01', 'YYYY-MM-DD'), 'entrenador');
+VALUES (1, 'Carlos', 'Gonzalez', 'Sanchez', 'Calle Ficticia 789', 'carlos.gonzalez@email.com', 987654323, 123456787, TO_DATE('2023-11-01', 'YYYY-MM-DD'), 'instructor');
  
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
 VALUES (2, 'Marta', 'Rodríguez', 'Pérez', 'Avenida Principal 101', 'marta.rodriguez@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
  
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (123, 'CBUM', 'Casemiro', 'Oreamuno', 'Avenida Principal 101', 'cbum@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'instructor');
+  
 -- Insertar registros en la tabla rutinas
 INSERT INTO rutinas (id_rutina, cliente, instructor, maquina, fecha, horas)
 VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 2);

@@ -1471,7 +1471,7 @@ app.delete('/delete-trabajador/:id', async (req, res) => {
 
         // Llamar al procedimiento almacenado eliminar_trabajador
         await connection.execute(
-            `BEGIN eliminar_trabajador(:id); END;`,
+            `BEGIN super_usereliminar_trabajador(:id); END;`,
             { id },
             { autoCommit: true }
         );
@@ -1554,7 +1554,7 @@ app.post('/insertar-historial-curso', async (req, res) => {
 
         await connection.execute(
             `BEGIN 
-                insertar_historial_curso(:id_historial, :id_curso, :cliente, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :horas, :instructor); 
+                super_user.insertar_historial_curso(:id_historial, :id_curso, :cliente, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :horas, :instructor); 
              END;`,
             {
                 id_historial: id_historial,
@@ -1608,7 +1608,7 @@ app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
 
         await connection.execute(
             `BEGIN 
-                insertar_cliente_y_crear_usuario(:cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion, :contrasena); 
+                super_user.insertar_cliente_y_crear_usuario(:cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion, :contrasena); 
              END;`,
             {
                 cedula: cedula.toUpperCase(),
@@ -1651,7 +1651,7 @@ app.post('/insert-membresia', async (req, res) => {
 
         // Llamar al procedimiento almacenado para insertar membresía
         await connection.execute(
-            `BEGIN sp_insert_membresia(:id, :id_cliente, :monto, :estado, :fecha); END;`,
+            `BEGIN super_user.sp_insert_membresia(:id, :id_cliente, :monto, :estado, :fecha); END;`,
             {
                 id,
                 id_cliente,
