@@ -16,6 +16,51 @@ DROP ROLE soporte;
 
 ---Aqui tambien cambie mi direccion del tablespace----
 
+conn sys/root@localhost/XE as sysdba;
+
+CREATE OR REPLACE PROCEDURE crear_usuario (
+    p_username         VARCHAR2,
+    p_contrasena       VARCHAR2
+) AS
+BEGIN
+    EXECUTE IMMEDIATE 'ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE';
+
+    EXECUTE IMMEDIATE 'CREATE USER ' || p_username || ' IDENTIFIED BY ' || p_contrasena;
+
+    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || p_username;
+
+    EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || p_username;
+    
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20002, 'Error al crear usuario: ' || SQLERRM);
+END;
+/ 
+
+
+CREATE OR REPLACE PROCEDURE crear_usuario_trabajador (
+    p_username         VARCHAR2,
+    p_contrasena       VARCHAR2
+) AS
+BEGIN
+    EXECUTE IMMEDIATE 'ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE';
+
+    EXECUTE IMMEDIATE 'CREATE USER ' || p_username || ' IDENTIFIED BY ' || p_contrasena;
+
+    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || p_username;
+
+    EXECUTE IMMEDIATE 'GRANT instructor TO ' || p_username;
+
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20002, 'Error al crear usuario: ' || SQLERRM);
+END;
+/
+
 CREATE TABLESPACE gimnasio
    DATAFILE 'C:\tablespace\gimnasio.dbf' 
    SIZE 100M 
@@ -904,30 +949,6 @@ EXCEPTION
 END;
 /
 
-/*
-CREATE OR REPLACE PROCEDURE crear_usuario (
-    p_username         VARCHAR2,
-    p_contrasena       VARCHAR2
-) AS
-BEGIN
-    EXECUTE IMMEDIATE 'ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE';
-
-    EXECUTE IMMEDIATE 'CREATE USER ' || p_username || ' IDENTIFIED BY ' || p_contrasena;
-
-    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || p_username;
-
-    EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || p_username;
-
-    COMMIT;
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        RAISE_APPLICATION_ERROR(-20002, 'Error al crear usuario: ' || SQLERRM);
-END;
-/ 
-
-*/
-
 ----------------------------update--------------------------------------------
 CREATE OR REPLACE PROCEDURE actualizar_cliente (
     p_cedula IN cliente.cedula%TYPE,
@@ -1101,7 +1122,7 @@ CREATE OR REPLACE PROCEDURE actualizar_rutina(
     p_cliente IN rutinas.cliente%TYPE,
     p_instructor IN rutinas.instructor%TYPE,
     p_maquina IN rutinas.maquina%TYPE,
-    p_fecha IN rutinas.fecha%TYPE,
+    p_fecha IN VARCHAR2, -- Cambiar a VARCHAR2 para manejar la conversión de fecha
     p_horas IN rutinas.horas%TYPE,
     p_resultado OUT NUMBER
 ) AS
@@ -1110,7 +1131,7 @@ BEGIN
     SET cliente = p_cliente,
         instructor = p_instructor,
         maquina = p_maquina,
-        fecha = p_fecha,
+        fecha = TO_DATE(p_fecha, 'YYYY-MM-DD'), -- Convertir la fecha al formato adecuado
         horas = p_horas
     WHERE id_rutina = p_id_rutina;
     
@@ -1124,9 +1145,8 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN
         p_resultado := -1;  -- Error en la actualización
-        ROLLBACK;
-        RAISE;
-END actualizar_rutina;
+        RAISE_APPLICATION_ERROR(-20001, 'Error al actualizar la rutina: ' || SQLERRM);
+END;
 /
 
 ----------------------------delete--------------------------------------------
@@ -1234,7 +1254,7 @@ END eliminar_maquina;
 
 
 ----------------------------insert--------------------------------------------
-CREATE OR REPLACE PROCEDURE insertar_trabajador_y_crear_usuario (
+CREATE OR REPLACE PROCEDURE insertar_trabajador (
     p_cod_instructor     INT,
     p_nombre             VARCHAR2,
     p_apellido1          VARCHAR2,
@@ -1244,11 +1264,9 @@ CREATE OR REPLACE PROCEDURE insertar_trabajador_y_crear_usuario (
     p_tel_cel            INT,
     p_tel_habitacion     INT,
     p_fecha_contratacion DATE,
-    p_rool               VARCHAR2,
-    p_contrasena         VARCHAR2
+    p_rool               VARCHAR2
 ) AS
 BEGIN
-    -- Inserta el trabajador en la tabla trabajador
     INSERT INTO trabajador (
         cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, 
         tel_cel, tel_habitacion, fecha_contratacion, rool
@@ -1257,21 +1275,11 @@ BEGIN
         p_e_mail, p_tel_cel, p_tel_habitacion, p_fecha_contratacion, p_rool
     );
 
-    -- Crea un usuario en la base de datos con el cod_instructor como nombre de usuario y la contraseña proporcionada
-    EXECUTE IMMEDIATE 'CREATE USER ' || p_cod_instructor || ' IDENTIFIED BY ' || p_contrasena;
-
-    -- Otorga privilegios básicos al nuevo usuario
-    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || p_cod_instructor;
-
-    -- Asigna el rol 'instructor' al nuevo usuario
-    EXECUTE IMMEDIATE 'GRANT instructor TO ' || p_cod_instructor;
-
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        -- Manejo de errores en caso de que falle la inserción o la creación del usuario
         ROLLBACK;
-        RAISE_APPLICATION_ERROR(-20002, 'Error al insertar trabajador o crear usuario: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error al insertar trabajador: ' || SQLERRM);
 END;
 /
 
@@ -1523,9 +1531,9 @@ END;
 
 
 --------------------auditoria---------------
-CREATE OR REPLACE PROCEDURE ver_auditorias AS
+CREATE OR REPLACE PROCEDURE ver_auditorias (p_cursor OUT SYS_REFCURSOR) AS
 BEGIN
-    FOR auditoria IN (
+    OPEN p_cursor FOR
         SELECT 
             username,        
             obj_name,           
@@ -1537,15 +1545,7 @@ BEGIN
         WHERE 
             obj_name IN ('CLIENTE', 'MEMBRESIA', 'RUTINAS', 'MAQUINAS', 'TRABAJADOR', 'HISTORIAL_CURSO', 'CURSOS')
         ORDER BY 
-            timestamp DESC
-    ) LOOP
-        -- Acceder a las columnas del cursor sin usar índice explícito
-        DBMS_OUTPUT.PUT_LINE('Usuario: ' || auditoria.username || 
-                             ', Tabla: ' || auditoria.obj_name || 
-                             ', Acción: ' || auditoria.action_name || 
-                             ', Fecha: ' || auditoria.timestamp || 
-                             ', Código Retorno: ' || auditoria.returncode);
-    END LOOP;
+            timestamp DESC;
 END;
 /
 
@@ -1742,6 +1742,13 @@ BEGIN
 END;
 /
 
+--Grants para los procedimientos del rol usuario_cliente
+GRANT EXECUTE ON super_user.obtener_usuario TO usuario_cliente;
+
+
+--Grant para los procedimientos del rol instructor
+GRANT EXECUTE ON super_user.obtener_usuario TO instructor;
+
 
 -- Inserts para probar
 
@@ -1817,9 +1824,5 @@ SET SERVEROUTPUT ON;
 COMMIT;
 
 
---INSERTAR CLIENTE Y CREAR USUARIO **Revisar**
---INSERTAR_MAQUINA
---INSERTAR_RUTINA
---INSERTAR_TRABAJADOR_Y_CREAR_USUARIO
---VER_AUDITORIAS
-
+--Forma de mostarla las auditorias
+--Dar permisos correctos a usuario_cliente y instructor

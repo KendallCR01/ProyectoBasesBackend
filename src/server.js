@@ -964,35 +964,44 @@ app.put('/actualizar-rutina', async (req, res) => {
     let connection;
 
     try {
+        // Establecer la conexión con la base de datos
         connection = await oracledb.getConnection(dbConfig);
 
+        // Llamar al procedimiento para actualizar la rutina
         const result = await connection.execute(
-            `BEGIN 
-                super_user.actualizar_rutina(:id_rutina, :cliente, :instructor, :maquina, 
-                                TO_DATE(:fecha, 'YYYY-MM-DD'), :horas, :resultado); 
-             END;`,
+            `BEGIN
+                super_user.actualizar_rutina(
+                    :id_rutina, :cliente, :instructor, :maquina, :fecha, :horas, :resultado
+                );
+            END;`,
             {
                 id_rutina: id_rutina,
                 cliente: cliente,
                 instructor: instructor,
                 maquina: maquina,
-                fecha: fecha,
+                fecha: fecha, // Asegúrate de que la fecha esté en formato 'YYYY-MM-DD'
                 horas: horas,
                 resultado: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
             }
         );
 
-        // Verificar el resultado del procedimiento
-        if (result.outBinds.resultado === 1) {
-            res.json({ message: 'Rutina actualizada con éxito' });
-        } else {
-            res.status(404).json({ message: 'Rutina no encontrada' });
-        }
+        const resultado = result.outBinds.resultado;
 
+        if (resultado === 1) {
+            res.status(200).json({ message: 'Rutina actualizada exitosamente' });
+        } else if (resultado === 0) {
+            res.status(404).json({ message: 'Rutina no encontrada' });
+        } else {
+            res.status(500).json({ message: 'Error al actualizar la rutina' });
+        }
     } catch (err) {
         console.error('Error al actualizar la rutina:', err);
-        res.status(500).json({ message: 'Error al actualizar la rutina', error: err.message });
+        res.status(500).json({
+            message: 'Error al actualizar la rutina',
+            error: err.message
+        });
     } finally {
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();
@@ -1644,7 +1653,7 @@ app.post('/insertar-historial-curso', async (req, res) => {
     }
 });*/
 
-app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
+/*app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
     const { cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion, contrasena } = req.body;
 
     // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
@@ -1711,7 +1720,142 @@ app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
             }
         }
     }
+});*/
+
+app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
+    const { cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion, contrasena } = req.body;
+
+    // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
+    const usuario = `user_${cedula}`;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos como super_user
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar el cliente
+        await connection.execute(
+            `BEGIN super_user.insertar_cliente(
+                :cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, 
+                TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion
+            ); END;`,
+            {
+                cedula: cedula,
+                nombre: nombre,
+                apellido1: apellido1,
+                apellido2: apellido2,
+                direccion: direccion,
+                e_mail: e_mail,
+                fecha_inscripcion: fecha_inscripcion,
+                celular: celular,
+                tel_habitacion: tel_habitacion
+            }
+        );
+
+        // Cerrar la conexión como super_user
+        await connection.close();
+
+        // Establecer la conexión con la base de datos como SYSDBA
+        connection = await oracledb.getConnection(sysdbaConfig);
+
+        // Llamar al procedimiento para crear el usuario
+        await connection.execute(
+            `BEGIN
+                crear_usuario(:usuario, :contrasena);
+            END;`,
+            {
+                usuario: usuario,
+                contrasena: contrasena
+            }
+        );
+
+        res.status(200).json({ message: 'Cliente y usuario creados exitosamente' });
+    } catch (err) {
+        console.error('Error al insertar el cliente y crear el usuario:', err);
+        res.status(500).json({
+            message: 'Error al insertar el cliente y crear el usuario',
+            error: err.message
+        });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
 });
+
+
+app.post('/insertar-trabajador-y-crear-usuario_trabajador', async (req, res) => {
+    const { cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool, contrasena } = req.body;
+
+    // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
+    const usuario = `user_${cod_instructor}`;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos como super_user
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar el trabajador
+        await connection.execute(
+            `BEGIN super_user.insertar_trabajador(
+                :cod_instructor, :nombre, :apellido1, :apellido2, :direccion, :e_mail, 
+                :tel_cel, :tel_habitacion, TO_DATE(:fecha_contratacion, 'YYYY-MM-DD'), :rool
+            ); END;`,
+            {
+                cod_instructor: cod_instructor,
+                nombre: nombre,
+                apellido1: apellido1,
+                apellido2: apellido2,
+                direccion: direccion,
+                e_mail: e_mail,
+                tel_cel: tel_cel,
+                tel_habitacion: tel_habitacion,
+                fecha_contratacion: fecha_contratacion,
+                rool: rool
+            }
+        );
+
+        // Cerrar la conexión como super_user
+        await connection.close();
+
+        // Establecer la conexión con la base de datos como SYSDBA
+        connection = await oracledb.getConnection(sysdbaConfig);
+
+        // Llamar al procedimiento para crear el usuario
+        await connection.execute(
+            `BEGIN
+                crear_usuario_trabajador(:usuario, :contrasena);
+            END;`,
+            {
+                usuario: usuario,
+                contrasena: contrasena
+            }
+        );
+
+        res.status(200).json({ message: 'Trabajador y usuario creados exitosamente' });
+    } catch (err) {
+        console.error('Error al insertar el trabajador y crear el usuario:', err);
+        res.status(500).json({
+            message: 'Error al insertar el trabajador y crear el usuario',
+            error: err.message
+        });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
 
 app.post('/insert-membresia', async (req, res) => {
     const { id, id_cliente, monto, estado, fecha } = req.body; // Obtener los datos del cuerpo de la solicitud
@@ -1750,6 +1894,137 @@ app.post('/insert-membresia', async (req, res) => {
         }
     } finally {
         // Cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+// Insertar una máquina
+app.post('/insertar-maquina', async (req, res) => {
+    const { id_maquina, descripcion, estado, dificultad } = req.body;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar la máquina
+        await connection.execute(
+            `BEGIN 
+                super_user.insertar_maquina(:id_maquina, :descripcion, :estado, :dificultad); 
+             END;`,
+            {
+                id_maquina: id_maquina,
+                descripcion: descripcion,
+                estado: estado,
+                dificultad: dificultad
+            },
+            { autoCommit: true }
+        );
+
+        res.json({ message: 'Máquina insertada correctamente' });
+
+    } catch (err) {
+        console.error('Error al insertar la máquina:', err);
+        res.status(500).json({ message: 'Error al insertar la máquina', error: err.message });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+// Insertar una rutina
+app.post('/insertar-rutina', async (req, res) => {
+    const { id_rutina, cliente, instructor, maquina, fecha, horas } = req.body;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar la rutina
+        await connection.execute(
+            `BEGIN 
+                super_user.insertar_rutina(:id_rutina, :cliente, :instructor, :maquina, TO_DATE(:fecha, 'YYYY-MM-DD'), :horas); 
+             END;`,
+            {
+                id_rutina: id_rutina,
+                cliente: cliente,
+                instructor: instructor,
+                maquina: maquina,
+                fecha: fecha,
+                horas: horas
+            },
+            { autoCommit: true }
+        );
+
+        res.json({ message: 'Rutina insertada correctamente' });
+
+    } catch (err) {
+        console.error('Error al insertar la rutina:', err);
+        res.status(500).json({ message: 'Error al insertar la rutina', error: err.message });
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+/*****Auditorias*****/
+
+
+// Ver auditorías
+app.get('/ver-auditorias', async (req, res) => {
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para ver las auditorías
+        const result = await connection.execute(
+            `BEGIN 
+                super_user.ver_auditorias(:cursor); 
+             END;`,
+            {
+                cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+            }
+        );
+
+        // Obtener los resultados del cursor
+        const resultSet = result.outBinds.cursor;
+        const rows = [];
+
+        let row;
+        while ((row = await resultSet.getRow())) {
+            rows.push(row);
+        }
+
+        await resultSet.close();
+
+        res.json(rows);
+
+    } catch (err) {
+        console.error('Error al ver las auditorías:', err);
+        res.status(500).json({ message: 'Error al ver las auditorías', error: err.message });
+    } finally {
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();
