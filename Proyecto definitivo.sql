@@ -1742,13 +1742,6 @@ BEGIN
 END;
 /
 
---Grants para los procedimientos del rol usuario_cliente
-GRANT EXECUTE ON super_user.obtener_usuario TO usuario_cliente;
-
-
---Grant para los procedimientos del rol instructor
-GRANT EXECUTE ON super_user.obtener_usuario TO instructor;
-
 
 -- Inserts para probar
 
@@ -1821,8 +1814,74 @@ GRANT CREATE SESSION TO user_123;
 
 SET SERVEROUTPUT ON;
 
+--Grants para los procedimientos del rol usuario_cliente
+GRANT EXECUTE ON super_user.obtener_usuario TO usuario_cliente;
+
+
+--Grant para los procedimientos del rol instructor
+GRANT EXECUTE ON super_user.obtener_usuario TO instructor;
+
+---------------------------usuario_cliente permiso procedures---------------------------------
+
+-- Permisos para procedimientos de 'membresia'
+GRANT EXECUTE ON sp_insert_membresia TO usuario_cliente;--
+GRANT EXECUTE ON sp_delete_membresia TO usuario_cliente;--
+GRANT EXECUTE ON actualizar_membresia TO usuario_cliente;--
+GRANT EXECUTE ON buscar_membresia_membresia TO usuario_cliente; -- Procedimiento para buscar una membresía por su ID
+GRANT EXECUTE ON obtener_todas_membresias TO usuario_cliente; --
+
+-- Permisos para procedimientos de 'clientes'
+GRANT EXECUTE ON eliminar_cliente TO usuario_cliente;--     
+GRANT EXECUTE ON actualizar_cliente  TO usuario_cliente;--
+GRANT EXECUTE ON mostrar_informacion_cliente TO usuario_cliente;
+
+---------------------------instructor permiso procedures---------------------------------------
+
+-- Permisos para procedimientos de 'rutinas'
+GRANT EXECUTE ON insertar_rutina TO instructor;--
+GRANT EXECUTE ON eliminar_rutina TO instructor;--
+GRANT EXECUTE ON actualizar_rutina TO instructor;--
+GRANT EXECUTE ON buscar_rutina TO instructor;--
+GRANT EXECUTE ON obtener_todas_rutinas TO instructor;--
+
+-- Permisos para procedimientos de 'maquinas'
+GRANT EXECUTE ON insertar_maquina TO instructor;--
+GRANT EXECUTE ON eliminar_maquina TO instructor;--
+GRANT EXECUTE ON actualizar_maquina TO instructor;--
+GRANT EXECUTE ON buscar_maquina TO instructor;--
+GRANT EXECUTE ON obtener_todas_maquinas TO instructor;--
+
+-- Permisos para procedimientos de 'clientes'
+GRANT EXECUTE ON insertar_cliente TO instructor;--
+GRANT EXECUTE ON eliminar_cliente TO instructor;--
+GRANT EXECUTE ON actualizar_cliente  TO instructor;--
+GRANT EXECUTE ON mostrar_informacion_cliente TO instructor;--
+GRANT EXECUTE ON obtener_todos_clientes TO instructor;--
+
+-- Permisos para procedimientos de 'cursos'
+GRANT EXECUTE ON insertar_curso TO instructor;--
+GRANT EXECUTE ON eliminar_curso TO instructor;--
+GRANT EXECUTE ON editar_curso TO instructor;--
+GRANT EXECUTE ON buscar_curso TO instructor;--
+GRANT EXECUTE ON obtener_todos_cursos TO instructor;--
+
+-- Permisos para procedimientos de 'historial_curso'
+GRANT EXECUTE ON insertar_historial_curso TO instructor;--
+GRANT EXECUTE ON eliminar_historial_curso TO instructor;--
+GRANT EXECUTE ON actualizar_historial_curs TO instructor;--
+GRANT EXECUTE ON buscar_historial_curso TO instructor;--
+GRANT EXECUTE ON obtener_todos_historial_curso TO instructor;--
+
+-- Permisos para procedimientos de 'membresia'
+GRANT EXECUTE ON sp_insert_membresia TO instructor;--
+GRANT EXECUTE ON sp_delete_membresia TO instructor;--
+GRANT EXECUTE ON actualizar_membresia TO instructor;--
+GRANT EXECUTE ON buscar_membresia TO instructor;--
+GRANT EXECUTE ON obtener_todas_membresias TO instructor;--
+
+-- Permiso de solo SELECT para la tabla 'instructor'
+GRANT EXECUTE ON buscar_trabajador TO instructor;--
+GRANT EXECUTE ON obtener_todos_trabajadores TO instructor;--
+
 COMMIT;
 
-
---Forma de mostarla las auditorias
---Dar permisos correctos a usuario_cliente y instructor
