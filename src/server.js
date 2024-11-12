@@ -12,9 +12,15 @@ const dbConfig = {
     connectString: 'localhost:1521/XE' // Aquí usas el SID
 };
 
+const sysdbaConfig = {
+    user: 'sys',
+    password: 'root',
+    connectString: 'localhost:1521/XE',
+    privilege: oracledb.SYSDBA
+};
+
 // Habilitar CORS para todas las solicitudes
 app.use(cors());
-
 app.use(express.json());
 
 //--------------------Todos los buscar individual------------------------------------
@@ -444,7 +450,7 @@ app.get('/obtener-todos-clientes', async (req, res) => {
 });
 
 
-app.post('/logout', async (req, res) => { 
+app.post('/logout', async (req, res) => {
 
     try {
         // Verifica que el usuario tiene una conexión activa
@@ -1042,17 +1048,17 @@ app.put('/actualizar-maquina', async (req, res) => {
 });
 
 app.put('/actualizar-trabajador', async (req, res) => {
-    const { 
-        cod_instructor, 
-        nombre, 
-        apellido1, 
-        apellido2, 
-        direccion, 
-        e_mail, 
-        tel_cel, 
-        tel_habitacion, 
-        fecha_contratacion, 
-        rool 
+    const {
+        cod_instructor,
+        nombre,
+        apellido1,
+        apellido2,
+        direccion,
+        e_mail,
+        tel_cel,
+        tel_habitacion,
+        fecha_contratacion,
+        rool
     } = req.body;
     let connection;
 
@@ -1146,9 +1152,9 @@ app.put('/actualizar-historial-curso', async (req, res) => {
         }
     } catch (err) {
         console.error('Error al actualizar el historial de curso:', err);
-        res.status(500).json({ 
-            message: 'Error al actualizar el historial de curso', 
-            error: err.message 
+        res.status(500).json({
+            message: 'Error al actualizar el historial de curso',
+            error: err.message
         });
     } finally {
         if (connection) {
@@ -1198,9 +1204,9 @@ app.put('/actualizar-membresia', async (req, res) => {
         }
     } catch (err) {
         console.error('Error al actualizar la membresía:', err);
-        res.status(500).json({ 
-            message: 'Error al actualizar la membresía', 
-            error: err.message 
+        res.status(500).json({
+            message: 'Error al actualizar la membresía',
+            error: err.message
         });
     } finally {
         if (connection) {
@@ -1217,43 +1223,43 @@ app.put('/actualizar-membresia', async (req, res) => {
 app.delete('/eliminar-cliente/:cedula', async (req, res) => {
     let connection;
     const cedula = req.params.cedula;
-  
+
     try {
-      // Establecer la conexión con la base de datos
-      connection = await oracledb.getConnection(dbConfig);
-  
-      // Ejecutar el procedimiento almacenado para eliminar el cliente
-      await connection.execute(
-        `BEGIN
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Ejecutar el procedimiento almacenado para eliminar el cliente
+        await connection.execute(
+            `BEGIN
            super_user.eliminar_cliente(:cedula);
          END;`,
-        { cedula: cedula }
-      );
-  
-      res.json({ message: 'Cliente eliminado con éxito' });
-  
+            { cedula: cedula }
+        );
+
+        res.json({ message: 'Cliente eliminado con éxito' });
+
     } catch (err) {
-      console.error('Error al eliminar el cliente:', err);
-  
-      // Manejar errores personalizados de Oracle
-      if (err.errorNum === 20034) {
-        res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene membresías asociadas.' });
-      } else if (err.errorNum === 20035) {
-        res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene rutinas asociadas.' });
-      } else if (err.errorNum === 20036) {
-        res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene historial de cursos asociados.' });
-      } else {
-        res.status(500).json({ message: 'Error al eliminar el cliente', error: err.message });
-      }
-    } finally {
-      // Asegurarse de cerrar la conexión
-      if (connection) {
-        try {
-          await connection.close();
-        } catch (err) {
-          console.error('Error al cerrar la conexión:', err);
+        console.error('Error al eliminar el cliente:', err);
+
+        // Manejar errores personalizados de Oracle
+        if (err.errorNum === 20034) {
+            res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene membresías asociadas.' });
+        } else if (err.errorNum === 20035) {
+            res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene rutinas asociadas.' });
+        } else if (err.errorNum === 20036) {
+            res.status(400).json({ message: 'No se puede eliminar el cliente porque tiene historial de cursos asociados.' });
+        } else {
+            res.status(500).json({ message: 'Error al eliminar el cliente', error: err.message });
         }
-      }
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
     }
 });
 
@@ -1261,85 +1267,85 @@ app.delete('/eliminar-cliente/:cedula', async (req, res) => {
 app.delete('/delete-membresia/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10); // Obtener el id desde la URL
     let connection;
-  
+
     try {
-      // Establecer la conexión con la base de datos
-      connection = await oracledb.getConnection(dbConfig);
-  
-      // Llamar al procedimiento almacenado sp_delete_membresia
-      await connection.execute(
-        `BEGIN super_user.sp_delete_membresia(:id); END;`,
-        [id],
-        { autoCommit: true }
-      );
-  
-      // Si se ejecuta correctamente, devolvemos un mensaje de éxito
-      res.status(200).json({ status: 'success', message: 'Membresía eliminada correctamente.' });
-  
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento almacenado sp_delete_membresia
+        await connection.execute(
+            `BEGIN super_user.sp_delete_membresia(:id); END;`,
+            [id],
+            { autoCommit: true }
+        );
+
+        // Si se ejecuta correctamente, devolvemos un mensaje de éxito
+        res.status(200).json({ status: 'success', message: 'Membresía eliminada correctamente.' });
+
     } catch (error) {
-      console.error('Error al eliminar la membresía:', error);
-  
-      // Capturar errores específicos de Oracle y enviarlos al frontend
-      if (error.message.includes('ORA-20036')) {
-        res.status(404).json({ status: 'error', message: 'La membresía no existe o ya fue eliminada.' });
-      } else if (error.message.includes('ORA-20037')) {
-        res.status(400).json({ status: 'error', message: 'Error al eliminar la membresía: ' + error.message });
-      } else {
-        res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
-      }
-    } finally {
-      // Cerrar la conexión
-      if (connection) {
-        try {
-          await connection.close();
-        } catch (err) {
-          console.error('Error al cerrar la conexión:', err);
+        console.error('Error al eliminar la membresía:', error);
+
+        // Capturar errores específicos de Oracle y enviarlos al frontend
+        if (error.message.includes('ORA-20036')) {
+            res.status(404).json({ status: 'error', message: 'La membresía no existe o ya fue eliminada.' });
+        } else if (error.message.includes('ORA-20037')) {
+            res.status(400).json({ status: 'error', message: 'Error al eliminar la membresía: ' + error.message });
+        } else {
+            res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
         }
-      }
+    } finally {
+        // Cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
     }
-  });
-  
-  app.delete('/delete-rutinas/:id', async (req, res) => {
+});
+
+app.delete('/delete-rutinas/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10); // Obtener el id de la rutina desde la URL
     let connection;
-  
+
     try {
-      // Establecer la conexión con la base de datos
-      connection = await oracledb.getConnection(dbConfig);
-  
-      // Llamar al procedimiento almacenado eliminar_rutina
-      await connection.execute(
-        `BEGIN super_user.eliminar_rutina(:id); END;`,
-        { id },
-        { autoCommit: true }
-      );
-  
-      // Enviar mensaje de éxito al frontend
-      res.status(200).json({ status: 'success', message: 'Rutina eliminada correctamente.' });
-  
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento almacenado eliminar_rutina
+        await connection.execute(
+            `BEGIN super_user.eliminar_rutina(:id); END;`,
+            { id },
+            { autoCommit: true }
+        );
+
+        // Enviar mensaje de éxito al frontend
+        res.status(200).json({ status: 'success', message: 'Rutina eliminada correctamente.' });
+
     } catch (error) {
-      console.error('Error al eliminar la rutina:', error);
-  
-      // Capturar errores de Oracle y enviarlos al frontend
-      if (error.message.includes('ORA-20037')) {
-        res.status(404).json({ status: 'error', message: 'La rutina que desea eliminar no existe.' });
-      } else if (error.message.includes('ORA-20038')) {
-        res.status(400).json({ status: 'error', message: 'Error al eliminar la rutina: ' + error.message });
-      } else {
-        res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
-      }
-    } finally {
-      // Cerrar la conexión
-      if (connection) {
-        try {
-          await connection.close();
-        } catch (err) {
-          console.error('Error al cerrar la conexión:', err);
+        console.error('Error al eliminar la rutina:', error);
+
+        // Capturar errores de Oracle y enviarlos al frontend
+        if (error.message.includes('ORA-20037')) {
+            res.status(404).json({ status: 'error', message: 'La rutina que desea eliminar no existe.' });
+        } else if (error.message.includes('ORA-20038')) {
+            res.status(400).json({ status: 'error', message: 'Error al eliminar la rutina: ' + error.message });
+        } else {
+            res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
         }
-      }
+    } finally {
+        // Cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
     }
-  });
-  app.delete('/delete-maquina/:id', async (req, res) => {
+});
+app.delete('/delete-maquina/:id', async (req, res) => {
     const id_maquina = parseInt(req.params.id, 10); // Obtener el id de la máquina desde la URL
     let connection;
 
@@ -1589,29 +1595,26 @@ app.post('/insertar-historial-curso', async (req, res) => {
     "error": "ORA-20001: Error al insertar cliente o crear usuario: 
     ORA-65096: nombre de usuario o rol común no válido\nORA-06512:
     en \"SUPER_USER.INSERTAR_CLIENTE_Y_CREAR_USUARIO\", línea 48\nORA-06512: 
-    en línea 2\nHelp: https://docs.oracle.com/error-help/db/ora-20001/" */ 
+    en línea 2\nHelp: https://docs.oracle.com/error-help/db/ora-20001/" */
 
-app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
+/*app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
     const { cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion, contrasena } = req.body;
-
-    // Validar que cedula no sea nulo o vacío y cumpla con los requisitos de nombre de usuario
-    if (!cedula) {
-        return res.status(400).json({ message: 'La cédula es requerida.' });
-    } else if (!/^[A-Za-z][A-Za-z0-9_$#]*$/.test(cedula)) {
-        return res.status(400).json({ message: 'La cédula debe comenzar con una letra y solo puede contener letras, números, y los caracteres especiales _, $, y #.' });
-    }
-
+ 
+    const usuario = `user_${cedula}`;
     let connection;
-
+ 
     try {
+        // Establecer la conexión con la base de datos
         connection = await oracledb.getConnection(dbConfig);
-
+ 
+        // Llamar al procedimiento almacenado
         await connection.execute(
-            `BEGIN 
-                super_user.insertar_cliente_y_crear_usuario(:cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion, :contrasena); 
-             END;`,
+            `BEGIN super_user.insertar_cliente_y_crear_usuario(
+                :cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, 
+                TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion, :contrasena, :usuario
+            ); END;`,
             {
-                cedula: cedula.toUpperCase(),
+                cedula: cedula,
                 nombre: nombre,
                 apellido1: apellido1,
                 apellido2: apellido2,
@@ -1620,17 +1623,89 @@ app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
                 fecha_inscripcion: fecha_inscripcion,
                 celular: celular,
                 tel_habitacion: tel_habitacion,
-                contrasena: contrasena
-            },
-            { autoCommit: true }
+                contrasena: contrasena,
+                usuario: usuario
+            }
         );
-
-        res.json({ message: 'Cliente y usuario creados correctamente' });
-
+ 
+        res.status(200).json({ message: 'Cliente y usuario creados exitosamente' });
     } catch (err) {
         console.error('Error al insertar el cliente y crear el usuario:', err);
-        res.status(500).json({ message: 'Error al insertar el cliente y crear el usuario', error: err.message });
+        res.status(500).json({
+            message: 'Error al insertar el cliente y crear el usuario',
+            error: err.message
+        });
     } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});*/
+
+app.post('/insertar-cliente-y-crear-usuario', async (req, res) => {
+    const { cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion, contrasena } = req.body;
+
+    // Asegúrate de que el nombre de usuario cumpla con las reglas de Oracle
+    const usuario = `user_${cedula}`;
+    let connection;
+
+    try {
+        // Establecer la conexión con la base de datos como super_user
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Llamar al procedimiento para insertar el cliente
+        await connection.execute(
+            `BEGIN super_user.insertar_cliente(
+                :cedula, :nombre, :apellido1, :apellido2, :direccion, :e_mail, 
+                TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :celular, :tel_habitacion
+            ); END;`,
+            {
+                cedula: cedula,
+                nombre: nombre,
+                apellido1: apellido1,
+                apellido2: apellido2,
+                direccion: direccion,
+                e_mail: e_mail,
+                fecha_inscripcion: fecha_inscripcion,
+                celular: celular,
+                tel_habitacion: tel_habitacion
+            }
+        );
+
+        // Cerrar la conexión como super_user
+        await connection.close();
+
+        // Establecer la conexión con la base de datos como SYSDBA
+        connection = await oracledb.getConnection(sysdbaConfig);
+
+        // Crear el usuario en la base de datos
+        await connection.execute(
+            `BEGIN
+                EXECUTE IMMEDIATE 'ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE';
+                EXECUTE IMMEDIATE 'CREATE USER ' || :usuario || ' IDENTIFIED BY ' || :contrasena;
+                EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || :usuario;
+                EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || :usuario;
+            END;`,
+            {
+                usuario: usuario,
+                contrasena: contrasena
+            }
+        );
+
+        res.status(200).json({ message: 'Cliente y usuario creados exitosamente' });
+    } catch (err) {
+        console.error('Error al insertar el cliente y crear el usuario:', err);
+        res.status(500).json({
+            message: 'Error al insertar el cliente y crear el usuario',
+            error: err.message
+        });
+    } finally {
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();

@@ -876,7 +876,7 @@ END mostrar_informacion_instructor;
 
 
 ----------------------------insert--------------------------------------------
-CREATE OR REPLACE PROCEDURE insertar_cliente_y_crear_usuario (
+CREATE OR REPLACE PROCEDURE insertar_cliente (
     p_cedula           INT,
     p_nombre           VARCHAR2,
     p_apellido1        VARCHAR2,
@@ -885,48 +885,48 @@ CREATE OR REPLACE PROCEDURE insertar_cliente_y_crear_usuario (
     p_e_mail           VARCHAR2,
     p_fecha_inscripcion DATE,
     p_celular          INT,
-    p_tel_habitacion   INT,
-    p_contrasena       VARCHAR2
+    p_tel_habitacion   INT
 ) AS
-    v_username VARCHAR2(30);
 BEGIN
-    -- Validar que p_cedula no sea nulo y cumpla con los requisitos de nombre de usuario
-    IF p_cedula IS NULL THEN
-        RAISE_APPLICATION_ERROR(-20002, 'La cédula no puede ser nula.');
-    ELSIF NOT REGEXP_LIKE(p_cedula, '^[A-Za-z][A-Za-z0-9_$#]*$') THEN
-        RAISE_APPLICATION_ERROR(-20003, 'La cédula debe comenzar con una letra y solo puede contener letras, números, y los caracteres especiales _, $, y #.');
-    END IF;
-
-    -- Convertir p_cedula a mayúsculas y agregar un prefijo si es necesario
-    v_username := UPPER(p_cedula);
-
-    -- Inserta el cliente en la tabla cliente
     INSERT INTO cliente (
         cedula, nombre, apellido1, apellido2, direccion, e_mail, 
         fecha_inscripcion, celular, tel_habitacion
     ) VALUES (
-        v_username, p_nombre, p_apellido1, p_apellido2, p_direccion, 
+        p_cedula, p_nombre, p_apellido1, p_apellido2, p_direccion, 
         p_e_mail, p_fecha_inscripcion, p_celular, p_tel_habitacion
     );
-
-    -- Crea un usuario en la base de datos con la cédula como nombre de usuario y la contraseña proporcionada
-    EXECUTE IMMEDIATE 'CREATE USER ' || v_username || ' IDENTIFIED BY ' || p_contrasena;
-
-    -- Otorga privilegios básicos al nuevo usuario
-    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || v_username;
-
-    -- Asigna el rol 'usuario_cliente' al nuevo usuario
-    EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || v_username;
 
     COMMIT;
 EXCEPTION
     WHEN OTHERS THEN
-        -- Manejo de errores en caso de que falle la inserción o la creación del usuario
         ROLLBACK;
-        RAISE_APPLICATION_ERROR(-20001, 'Error al insertar cliente o crear usuario: ' || SQLERRM);
+        RAISE_APPLICATION_ERROR(-20001, 'Error al insertar cliente: ' || SQLERRM);
 END;
 /
 
+/*
+CREATE OR REPLACE PROCEDURE crear_usuario (
+    p_username         VARCHAR2,
+    p_contrasena       VARCHAR2
+) AS
+BEGIN
+    EXECUTE IMMEDIATE 'ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE';
+
+    EXECUTE IMMEDIATE 'CREATE USER ' || p_username || ' IDENTIFIED BY ' || p_contrasena;
+
+    EXECUTE IMMEDIATE 'GRANT CONNECT TO ' || p_username;
+
+    EXECUTE IMMEDIATE 'GRANT usuario_cliente TO ' || p_username;
+
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE_APPLICATION_ERROR(-20002, 'Error al crear usuario: ' || SQLERRM);
+END;
+/ 
+
+*/
 
 ----------------------------update--------------------------------------------
 CREATE OR REPLACE PROCEDURE actualizar_cliente (
@@ -1821,6 +1821,5 @@ COMMIT;
 --INSERTAR_MAQUINA
 --INSERTAR_RUTINA
 --INSERTAR_TRABAJADOR_Y_CREAR_USUARIO
---SP_INSERT_MEMBRESIA
 --VER_AUDITORIAS
 
