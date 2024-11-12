@@ -1825,4 +1825,4 @@ COMMIT;
 
 
 --Forma de mostarla las auditorias
-
+--Dar permisos correctos a usuario_cliente y instructor
