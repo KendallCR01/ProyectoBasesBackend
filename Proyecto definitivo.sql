@@ -1382,15 +1382,19 @@ START WITH 5
 INCREMENT BY 1
 NOCACHE;
 
+
+
+
 CREATE OR REPLACE PROCEDURE insertar_historial_curso(
     p_cliente INT,
+    p_id_curso NUMBER,
+    p_instructor NUMBER,
     p_fecha_inscripcion DATE,
-    p_horas NUMBER,
-    p_instructor NUMBER
+    p_horas NUMBER
 ) AS
 BEGIN
-    INSERT INTO historial_curso (id_historial, cliente, curso, fecha, horas, instructor)
-    VALUES (seq_id_historial_curso, p_cliente, p_id_curso, p_fecha_inscripcion, p_horas, p_instructor);
+    INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
+    VALUES (seq_id_historial_curso.NEXTVAL, p_cliente, p_instructor,p_id_curso, p_fecha_inscripcion, p_horas);
     DBMS_OUTPUT.PUT_LINE('Historial de curso insertado correctamente.');
 END;
 /
