@@ -852,10 +852,7 @@ app.get('/buscar-info-cliente/:cedula_cliente', async (req, res) => {
                 e_mail: row[5],
                 fecha_inscripcion: row[6],
                 celular: row[7],
-                tel_habitacion: row[8],
-                curso: row[9],
-                id_rutina: row[10],
-                nombre_instructor: row[11]
+                tel_habitacion: row[8]
             }));
             res.json(clientes); // Devolver los datos como un objeto JSON
         } else {
