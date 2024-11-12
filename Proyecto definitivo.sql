@@ -1706,37 +1706,6 @@ END;
 /
 
 
-CREATE OR REPLACE PROCEDURE validate_user_role(
-    p_username IN VARCHAR2,    -- Nombre del usuario a verificar
-    p_role OUT VARCHAR2,       -- Rol que el usuario tendrá, en este caso 'INSTRUCTOR' si lo tiene
-    p_status OUT VARCHAR2      -- Estado de la autenticación
-) AS
-    role_exists INTEGER;       -- Variable para verificar si el usuario tiene el rol requerido
-BEGIN
-     -- Verificar si el usuario tiene el rol 'INSTRUCTOR'
-    SELECT COUNT(*)
-    INTO role_exists
-    FROM DBA_ROLE_PRIVS
-    WHERE grantee = UPPER(p_username)
-    AND granted_role = 'INSTRUCTOR'; -- Fijamos el rol 'INSTRUCTOR' directamente en la consulta
-
-    IF role_exists > 0 THEN
-        p_status := 'Usuario autenticado correctamente y rol verificado';
-        p_role := 'INSTRUCTOR';  -- Asignamos 'INSTRUCTOR' si el usuario tiene ese rol
-    ELSE
-        p_status := 'Usuario no encontrado o no es instructor';
-        p_role := NULL;  -- Si no tiene el rol, asignamos NULL
-    END IF;
-
-EXCEPTION
-    WHEN OTHERS THEN
-        p_status := 'Error en la validación de usuario o rol';
-        p_role := NULL;  -- En caso de error, dejamos NULL el rol
-END validate_user_role;
-/
-
-
-
 CREATE OR REPLACE PROCEDURE obtener_usuario (
     p_id IN INT,  -- ID de cliente o trabajador
     p_resultado OUT SYS_REFCURSOR  -- Cursor de la búsqueda
@@ -1834,15 +1803,6 @@ VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 5);
  
 INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
 VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 4);
-
-ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
-
-CREATE USER cbum2 IDENTIFIED BY 12345;
-GRANT instructor TO cbum2;
-GRANT EXECUTE ANY PROCEDURE TO cbum2;
-GRANT CREATE SESSION TO cbum2;
-
-
 
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
 

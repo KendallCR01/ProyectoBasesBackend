@@ -1268,7 +1268,7 @@ app.delete('/delete-membresia/:id', async (req, res) => {
   
       // Llamar al procedimiento almacenado sp_delete_membresia
       await connection.execute(
-        `BEGIN sp_delete_membresia(:id); END;`,
+        `BEGIN super_user.sp_delete_membresia(:id); END;`,
         [id],
         { autoCommit: true }
       );
@@ -1309,7 +1309,7 @@ app.delete('/delete-membresia/:id', async (req, res) => {
   
       // Llamar al procedimiento almacenado eliminar_rutina
       await connection.execute(
-        `BEGIN eliminar_rutina(:id); END;`,
+        `BEGIN super_user.eliminar_rutina(:id); END;`,
         { id },
         { autoCommit: true }
       );
@@ -1349,7 +1349,7 @@ app.delete('/delete-membresia/:id', async (req, res) => {
 
         // Llamar al procedimiento almacenado eliminar_maquina
         await connection.execute(
-            `BEGIN eliminar_maquina(:id_maquina); END;`,
+            `BEGIN super_user.eliminar_maquina(:id_maquina); END;`,
             { id_maquina },
             { autoCommit: true }
         );
@@ -1431,7 +1431,7 @@ app.delete('/delete-historial-curso/:id', async (req, res) => {
 
         // Llamar al procedimiento almacenado eliminar_historial_curso
         await connection.execute(
-            `BEGIN eliminar_historial_curso(:id); END;`,
+            `BEGIN super_user.eliminar_historial_curso(:id); END;`,
             { id },
             { autoCommit: true }
         );
@@ -1471,7 +1471,7 @@ app.delete('/delete-trabajador/:id', async (req, res) => {
 
         // Llamar al procedimiento almacenado eliminar_trabajador
         await connection.execute(
-            `BEGIN super_usereliminar_trabajador(:id); END;`,
+            `BEGIN super_user.eliminar_trabajador(:id); END;`,
             { id },
             { autoCommit: true }
         );
