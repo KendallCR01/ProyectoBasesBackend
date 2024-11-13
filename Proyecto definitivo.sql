@@ -85,13 +85,12 @@ CREATE TABLE cliente (
 )TABLESPACE gimnasio; 
 
 CREATE TABLE membresia (
-    id INT PRIMARY KEY,
-    id_cliente INT,
-    monto INT,
-    estado VARCHAR2(30),
-    fecha DATE,
-    FOREIGN KEY (id_cliente) REFERENCES Cliente(cedula)
-)TABLESPACE gimnasio; 
+    id_membresia NUMBER PRIMARY KEY,
+    id_cliente NUMBER,
+    monto NUMBER,
+    estado VARCHAR2(50),
+    fecha DATE
+); 
 
 CREATE TABLE maquinas (
     id_maquina INT PRIMARY KEY,
@@ -247,7 +246,7 @@ BEGIN
     -- Validar si el registro ya existe
     SELECT COUNT(*) INTO v_existente
     FROM membresia
-    WHERE id = :NEW.id;
+    WHERE id_membresia = :NEW.id_membresia;
 
     IF v_existente > 0 THEN
         RAISE_APPLICATION_ERROR(-20002, 'La membresía ya existe.');
@@ -261,7 +260,7 @@ BEGIN
     IF v_cliente_existente = 0 THEN
         RAISE_APPLICATION_ERROR(-20003, 'El cliente especificado en la membresía no existe.');
     ELSE
-        DBMS_OUTPUT.PUT_LINE('Información insertada correctamente: ID Membresía: ' || :NEW.id ||
+        DBMS_OUTPUT.PUT_LINE('Información insertada correctamente: ID Membresía: ' || :NEW.id_membresia ||
                              ', Cliente ID: ' || :NEW.id_cliente || ', Monto: ' || :NEW.monto);
     END IF;
 
@@ -1029,12 +1028,12 @@ CREATE OR REPLACE PROCEDURE sp_insert_membresia(
     p_fecha IN membresia.fecha%TYPE
 ) AS
 BEGIN
-    INSERT INTO membresia (id, id_cliente, monto, estado, fecha)
-    VALUES (seq_id_membresia.NEXT, p_id_cliente, p_monto, p_estado, p_fecha);
+    INSERT INTO membresia (id_membresia, id_cliente, monto, estado, fecha)
+    VALUES (seq_id_membresia.NEXTVAL, p_id_cliente, p_monto, p_estado, p_fecha);
     DBMS_OUTPUT.PUT_LINE('Membresía insertada correctamente.');
 EXCEPTION
     WHEN OTHERS THEN
-        DBMS_OUTPUT.PUT_LINE('Error en sp_insert_membresia: ' || SQLERRM);
+        DBMS_OUTPUT.PUT_LINE('Error al insertar membresía: ' || SQLERRM);
         RAISE;
 END sp_insert_membresia;
 /

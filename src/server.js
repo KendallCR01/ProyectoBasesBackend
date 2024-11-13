@@ -1558,7 +1558,7 @@ app.post('/insertar-curso', async (req, res) => {
 
 // Insertar un historial de curso
 app.post('/insertar-historial-curso', async (req, res) => {
-    const {cliente, id_curso, instructor,  fecha_inscripcion, horas} = req.body;
+    const { cliente, id_curso, instructor, fecha_inscripcion, horas } = req.body;
     let connection;
 
     try {
@@ -1832,7 +1832,9 @@ app.post('/insert-membresia', async (req, res) => {
 
         // Llamar al procedimiento almacenado para insertar membresía
         await connection.execute(
-            `BEGIN super_user.sp_insert_membresia(:id_cliente, :monto, :estado, TO_DATE(:fecha, 'YYYY-MM-DD')); END;`,
+            `BEGIN 
+             super_user.sp_insert_membresia(:id_cliente, :monto, :estado, TO_DATE(:fecha, 'YYYY-MM-DD')); 
+            END;`,
             {
                 id_cliente,
                 monto,
@@ -1847,22 +1849,18 @@ app.post('/insert-membresia', async (req, res) => {
 
     } catch (error) {
         console.error('Error al insertar la membresía:', error);
-
-        // Manejo de errores específicos
-        if (error.message.includes('ORA-20002')) {
-            res.status(409).json({ status: 'error', message: 'La membresía ya existe.' });
-        } else if (error.message.includes('ORA-20003')) {
-            res.status(404).json({ status: 'error', message: 'El cliente especificado en la membresía no existe.' });
-        } else {
-            res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
-        }
+        res.status(500).json({
+            status: 'error',
+            message: 'Error al insertar la membresía',
+            error: error.message
+        });
     } finally {
-        // Cerrar la conexión
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();
-            } catch (err) {
-                console.error('Error al cerrar la conexión:', err);
+            } catch (error) {
+                console.error('Error al cerrar la conexión:', error);
             }
         }
     }
@@ -1870,7 +1868,7 @@ app.post('/insert-membresia', async (req, res) => {
 
 // Insertar una máquina
 app.post('/insertar-maquina', async (req, res) => {
-    const {descripcion, estado, dificultad } = req.body;
+    const { descripcion, estado, dificultad } = req.body;
     let connection;
 
     try {
