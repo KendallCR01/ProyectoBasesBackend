@@ -926,7 +926,7 @@ app.put('/actualizar-curso', async (req, res) => {
 
         const result = await connection.execute(
             `BEGIN 
-                super_user.actualizar_curso(:id_curso, :descripcion, :horario, :disponibilidad, :resultado); 
+                super_user.editar_curso(:id_curso, :descripcion, :horario, :disponibilidad); 
              END;`,
             {
                 id_curso: id_curso,

@@ -64,8 +64,6 @@ GRANT DBA TO super_user;
 conn super_user/root@localhost/XE;  
 
 
----Aqui tambien dar agrega el tablespace al final creo..----
-
 --A continuacion se realiza la creacion de las tablas justo como 
 --se hace en el diagrama entidad-relacion brindado en el documento  
 -- nota: en cada se pone "TABLESPACE gimnasio;" para asegurarnos que se cree en ese espacio
@@ -1491,31 +1489,29 @@ CREATE OR REPLACE PROCEDURE editar_curso(
     p_id_curso NUMBER,
     p_descripcion VARCHAR2,
     p_horario VARCHAR2,
-    p_disponibilidad VARCHAR2,
+    p_disponibilidad VARCHAR2
+    p_resultado OUT NUMBER  
 ) AS
 BEGIN
-    IF p_descripcion IS NOT NULL THEN
-        UPDATE cursos
-        SET descripcion = p_descripcion
-        WHERE id_curso = p_id_curso;
+    -- Actualizar la tabla en una sola sentencia si hay parámetros proporcionados
+    UPDATE cursos
+    SET 
+        descripcion = NVL(p_descripcion, descripcion),
+        horario = NVL(p_horario, horario),
+        disponibilidad = NVL(p_disponibilidad, disponibilidad)
+    WHERE id_curso = p_id_curso;
+
+    IF SQL%ROWCOUNT > 0 THEN
+        p_resultado := 1;  -- Se actualizó el cliente
+    ELSE
+        p_resultado := 0;  -- No se encontró el cliente
     END IF;
 
-    -- Actualizar el horario si se proporciona
-    IF p_horario IS NOT NULL THEN
-        UPDATE cursos
-        SET horario = p_horario
-        WHERE id_curso = p_id_curso;
-    END IF;
-
-    -- Actualizar la disponibilidad si se proporciona
-    IF p_disponibilidad IS NOT NULL THEN
-        UPDATE cursos
-        SET disponibilidad = p_disponibilidad
-        WHERE id_curso = p_id_curso;
-    END IF;
     COMMIT;
 END;
 /
+
+
 
 ---------------------------delete--------------------------------------------
  CREATE OR REPLACE PROCEDURE eliminar_curso(
@@ -1798,7 +1794,6 @@ GRANT soporte TO user_4444;
 CREATE USER user_8888 IDENTIFIED BY 12345;
 GRANT soporte TO user_8888;
 
-
 SET SERVEROUTPUT ON;
 
 --Grants para los procedimientos del rol usuario_cliente
@@ -1861,6 +1856,7 @@ GRANT EXECUTE ON eliminar_curso TO instructor;
 GRANT EXECUTE ON editar_curso TO instructor;
 GRANT EXECUTE ON buscar_curso TO instructor;
 GRANT EXECUTE ON obtener_todos_cursos TO instructor;
+
 
 -- Permisos para procedimientos de 'historial_curso'
 GRANT EXECUTE ON insertar_historial_curso TO instructor;
