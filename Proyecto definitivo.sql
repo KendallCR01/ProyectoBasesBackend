@@ -61,12 +61,10 @@ CREATE USER super_user IDENTIFIED BY "root"
 GRANT DBA TO super_user;
 
 
---Aqui lo cambie por esto, solo asi me corrio-----
-
 conn super_user/root@localhost/XE;  
 
 
----Aqui tambien dr agrega el tablespace al final creo..----
+---Aqui tambien dar agrega el tablespace al final creo..----
 
 --A continuacion se realiza la creacion de las tablas justo como 
 --se hace en el diagrama entidad-relacion brindado en el documento  
@@ -151,9 +149,7 @@ CREATE TABLE historial_curso (
 -- que determina cómo y dónde se almacenarán los registros de auditoría
 ALTER SYSTEM SET audit_trail=db SCOPE=SPFILE;
 
-
-
---aqui despues de activar las auditorias, le creamos la auditoria a cada tabla como tal.
+--aqui despues de activar las auditorias, le creamos la auditoria a cada tabla como tal utilizando las tablas de auditorias de oracle.
 AUDIT ALL ON Cliente;
 AUDIT ALL ON Membresia;
 AUDIT ALL ON Rutinas;
@@ -195,7 +191,7 @@ GRANT INSERT, UPDATE, DELETE ON rutinas TO instructor;
 GRANT INSERT, UPDATE, DELETE ON historial_curso TO instructor;
 GRANT CREATE SESSION TO instructor;
 
--- Crear el rol soporte
+-- Crear el rol soporte el cual es un usuario de dba
 CREATE ROLE soporte;
 GRANT DBA TO soporte;
 
@@ -1771,7 +1767,7 @@ END;
 
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
 
---No se crean clientes porque se crean en caliente
+--Los clientes no se crean de antemano, ya que estos se crean en ejecución ya en el programa (en caliente) 
 
 --Instructores del sistema--
 
@@ -1785,29 +1781,28 @@ CREATE USER user_1110 IDENTIFIED BY 12345;
 GRANT instructor TO user_1110;
 
 CREATE USER user_2220 IDENTIFIED BY 12345;
-GRANT instructor TO user_1110;
+GRANT instructor TO user_2220;
 
 
 --Soportes del sistema--
 
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (404090, 'Cristiano', 'Ronaldo', 'dos Santo', 'San jose, av central', 'cristianoRonaldo@email.com', 22756101, 88709011, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
+VALUES (4444, 'Cristiano', 'Ronaldo', 'dos Santo', 'San jose, av central', 'cristianoRonaldo@email.com', 22756101, 88709011, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
 
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (808010, 'Leonal Andres', 'Messi', 'Cuccittin', 'Heredia, San Rafael', 'leoMessi@email.com', 22750990, 88709010, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
+VALUES (8888, 'Leonal Andres', 'Messi', 'Cuccittin', 'Heredia, San Rafael', 'leoMessi@email.com', 22750990, 88709010, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
 
-CREATE USER user_404090 IDENTIFIED BY 12345;
-GRANT soporte TO user_404090;
+CREATE USER user_4444 IDENTIFIED BY 12345;
+GRANT soporte TO user_4444;
 
-CREATE USER user_808010 IDENTIFIED BY 12345;
-GRANT soporte TO user_404090;
+CREATE USER user_8888 IDENTIFIED BY 12345;
+GRANT soporte TO user_8888;
 
 
 SET SERVEROUTPUT ON;
 
 --Grants para los procedimientos del rol usuario_cliente
 GRANT EXECUTE ON super_user.obtener_usuario TO usuario_cliente;
-
 
 --Grant para los procedimientos del rol instructor
 GRANT EXECUTE ON super_user.obtener_usuario TO instructor;
