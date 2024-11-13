@@ -1851,12 +1851,32 @@ VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 5);
 INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
 VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 4);
 
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (222, 'Arnold', 'Rodríguez', 'Pérez', 'Avenida Principal 101', 'arn.rodriguez@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
+
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
 
 CREATE USER user_123 IDENTIFIED BY 12345;
 GRANT instructor TO user_123;
 GRANT EXECUTE ANY PROCEDURE TO user_123;
 GRANT CREATE SESSION TO user_123;
+
+--Soportes del sistema--
+
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (404090, 'Cristiano', 'Ronaldo', 'dos Santo', 'San jose, av central', 'cristianoRonaldo@email.com', 22756101, 88709011, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
+
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (808010, 'Leonal Andres', 'Messi', 'Cuccittin', 'Heredia, San Rafael', 'leoMessi@email.com', 22750990, 88709010, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
+
+CREATE USER user_404090 IDENTIFIED BY 12345;
+GRANT soporte TO Soporte1;
+GRANT CREATE SESSION TO Soporte1;
+
+-- Crear el usuario Soporte2
+CREATE USER user_808010 IDENTIFIED BY 12345;
+GRANT soporte TO Soporte2;
+GRANT CREATE SESSION TO Soporte2;
 
 
 SET SERVEROUTPUT ON;
@@ -1867,6 +1887,9 @@ GRANT EXECUTE ON super_user.obtener_usuario TO usuario_cliente;
 
 --Grant para los procedimientos del rol instructor
 GRANT EXECUTE ON super_user.obtener_usuario TO instructor;
+
+
+GRANT EXECUTE ON super_user.obtener_usuario TO soporte;
 
 ---------------------------usuario_cliente permiso procedures---------------------------------
 

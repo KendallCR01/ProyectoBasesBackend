@@ -1823,7 +1823,7 @@ app.post('/insertar-trabajador-y-crear-usuario_trabajador', async (req, res) => 
 
 
 app.post('/insert-membresia', async (req, res) => {
-    const { id, id_cliente, monto, estado, fecha } = req.body; // Obtener los datos del cuerpo de la solicitud
+    const { id_cliente, monto, estado, fecha } = req.body; // Obtener los datos del cuerpo de la solicitud
     let connection;
 
     try {
@@ -1832,13 +1832,12 @@ app.post('/insert-membresia', async (req, res) => {
 
         // Llamar al procedimiento almacenado para insertar membresía
         await connection.execute(
-            `BEGIN super_user.sp_insert_membresia(:id, :id_cliente, :monto, :estado, :fecha); END;`,
+            `BEGIN super_user.sp_insert_membresia(:id_cliente, :monto, :estado, TO_DATE(:fecha, 'YYYY-MM-DD')); END;`,
             {
-                id,
                 id_cliente,
                 monto,
                 estado,
-                fecha: new Date(fecha) // Convertir a formato de fecha adecuado
+                fecha: fecha // Convertir a formato de fecha adecuado
             },
             { autoCommit: true }
         );
