@@ -1023,8 +1023,12 @@ END eliminar_cliente;
 
 
 ----------------------------insert--------------------------------------------
+CREATE SEQUENCE seq_id_membresia
+START WITH 10
+INCREMENT BY 1
+NOCACHE;
+
 CREATE OR REPLACE PROCEDURE sp_insert_membresia(
-    p_id IN membresia.id%TYPE,
     p_id_cliente IN membresia.id_cliente%TYPE,
     p_monto IN membresia.monto%TYPE,
     p_estado IN membresia.estado%TYPE,
@@ -1032,7 +1036,7 @@ CREATE OR REPLACE PROCEDURE sp_insert_membresia(
 ) AS
 BEGIN
     INSERT INTO membresia (id, id_cliente, monto, estado, fecha)
-    VALUES (p_id, p_id_cliente, p_monto, p_estado, p_fecha);
+    VALUES (seq_id_membresia.NEXT, p_id_cliente, p_monto, p_estado, p_fecha);
     DBMS_OUTPUT.PUT_LINE('Membresía insertada correctamente.');
 EXCEPTION
     WHEN OTHERS THEN
@@ -1096,9 +1100,14 @@ CREATE OR REPLACE PROCEDURE sp_delete_membresia(
 
 
 ----------------------------insert--------------------------------------------
+CREATE SEQUENCE seq_id_rutina
+START WITH 10
+INCREMENT BY 1
+NOCACHE;
+
+
 
 CREATE OR REPLACE PROCEDURE insertar_rutina(
-    p_id_rutina IN rutinas.id_rutina%TYPE,
     p_cliente IN rutinas.cliente%TYPE,
     p_instructor IN rutinas.instructor%TYPE,
     p_maquina IN rutinas.maquina%TYPE,
@@ -1107,7 +1116,7 @@ CREATE OR REPLACE PROCEDURE insertar_rutina(
 ) AS
 BEGIN
     INSERT INTO rutinas (id_rutina, cliente, instructor, maquina, fecha, horas)
-    VALUES (p_id_rutina, p_cliente, p_instructor, p_maquina, p_fecha, p_horas);
+    VALUES (seq_id_rutina.NEXTVAL, p_cliente, p_instructor, p_maquina, p_fecha, p_horas);
     DBMS_OUTPUT.PUT_LINE('Rutina insertada correctamente.');
 EXCEPTION
     WHEN OTHERS THEN
@@ -1178,15 +1187,20 @@ END;
 
 
 ----------------------------insert--------------------------------------------
+CREATE SEQUENCE seq_id_maquina
+START WITH 10
+INCREMENT BY 1
+NOCACHE;
+
+
 CREATE OR REPLACE PROCEDURE insertar_maquina(
-    p_id_maquina NUMBER,
     p_descripcion VARCHAR2,
     p_estado VARCHAR2,
     p_dificultad VARCHAR2
 ) AS
 BEGIN
     INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-    VALUES (p_id_maquina, p_descripcion, p_estado, p_dificultad);
+    VALUES (seq_id_maquina.NEXTVAL, p_descripcion, p_estado, p_dificultad);
     DBMS_OUTPUT.PUT_LINE('Máquina insertada correctamente.');
 EXCEPTION
     WHEN OTHERS THEN
