@@ -1835,14 +1835,22 @@ GRANT instructor TO user_123;
 GRANT EXECUTE ANY PROCEDURE TO user_123;
 GRANT CREATE SESSION TO user_123;
 
+--Soportes del sistema--
 
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (404090, 'Cristiano', 'Ronaldo', 'dos Santo', 'San jose, av central', 'cristianoRonaldo@email.com', 22756101, 88709011, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
 
----SOPORTE PRUEBA----
-CREATE USER user_222 IDENTIFIED BY 12345;
-GRANT soporte TO user_222;
-GRANT EXECUTE ANY PROCEDURE TO user_222;
-GRANT CREATE SESSION TO user_222;
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (808010, 'Leonal Andres', 'Messi', 'Cuccittin', 'Heredia, San Rafael', 'leoMessi@email.com', 22750990, 88709010, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
 
+CREATE USER user_404090 IDENTIFIED BY 12345;
+GRANT soporte TO Soporte1;
+GRANT CREATE SESSION TO Soporte1;
+
+-- Crear el usuario Soporte2
+CREATE USER user_808010 IDENTIFIED BY 12345;
+GRANT soporte TO Soporte2;
+GRANT CREATE SESSION TO Soporte2;
 
 
 SET SERVEROUTPUT ON;
