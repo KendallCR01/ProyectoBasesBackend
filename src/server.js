@@ -1972,11 +1972,11 @@ app.get('/ver-auditorias', async (req, res) => {
 
         // Mapear los resultados a un formato JSON con nombres descriptivos
         const auditorias = rows.map(row => ({
-            username: row[0],
-            obj_name: row[1],
-            action_name: row[2],
-            timestamp: row[3],
-            returncode: row[4]
+            "Nombre de Usuario": row[0],
+            "Nombre OBJ": row[1],
+            "Accion": row[2],
+            "Fecha y hora": row[3],
+            "Codigo de retorno": row[4]
         }));
 
         res.json(auditorias); // Devolver los datos como un arreglo JSON

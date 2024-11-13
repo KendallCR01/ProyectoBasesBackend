@@ -1820,9 +1820,6 @@ VALUES (1, 'Carlos', 'Gonzalez', 'Sanchez', 'Calle Ficticia 789', 'carlos.gonzal
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
 VALUES (2, 'Marta', 'Rodríguez', 'Pérez', 'Avenida Principal 101', 'marta.rodriguez@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
  
-INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (123, 'CBUM', 'Casemiro', 'Oreamuno', 'Avenida Principal 101', 'cbum@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'instructor');
-  
 -- Insertar registros en la tabla rutinas
 INSERT INTO rutinas (id_rutina, cliente, instructor, maquina, fecha, horas)
 VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 2);
@@ -1855,6 +1852,21 @@ GRANT instructor TO user_123;
 GRANT EXECUTE ANY PROCEDURE TO user_123;
 GRANT CREATE SESSION TO user_123;
 
+--Instructores del sistema--
+
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (1110, 'CBUM', 'Casemiro', 'Oreamuno', 'Avenida Principal 101', 'cbum@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'instructor');
+
+INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
+VALUES (2220, 'Ronny', 'Coleman', 'Coleman', 'Calle Ficticia 789', 'carlos.gonzalez@email.com', 987654323, 123456787, TO_DATE('2023-11-01', 'YYYY-MM-DD'), 'instructor');
+
+CREATE USER user_1110 IDENTIFIED BY 12345;
+GRANT instructor TO user_1110;
+
+CREATE USER user_2220 IDENTIFIED BY 12345;
+GRANT instructor TO user_1110;
+
+
 --Soportes del sistema--
 
 INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
@@ -1864,13 +1876,10 @@ INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion,
 VALUES (808010, 'Leonal Andres', 'Messi', 'Cuccittin', 'Heredia, San Rafael', 'leoMessi@email.com', 22750990, 88709010, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
 
 CREATE USER user_404090 IDENTIFIED BY 12345;
-GRANT soporte TO Soporte1;
-GRANT CREATE SESSION TO Soporte1;
+GRANT soporte TO user_404090;
 
--- Crear el usuario Soporte2
 CREATE USER user_808010 IDENTIFIED BY 12345;
-GRANT soporte TO Soporte2;
-GRANT CREATE SESSION TO Soporte2;
+GRANT soporte TO user_404090;
 
 
 SET SERVEROUTPUT ON;
