@@ -1996,6 +1996,7 @@ app.get('/ver-auditorias', async (req, res) => {
     }
 });
 
+
 app.get('/buscar-membresia-cliente/:id_cliente', async (req, res) => {
     let connection;
     const id_cliente = req.params.id_cliente;
