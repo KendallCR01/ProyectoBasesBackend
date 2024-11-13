@@ -1123,7 +1123,7 @@ app.put('/actualizar-trabajador', async (req, res) => {
     }
 });
 
-app.put('/actualizar-historial-curso', async (req, res) => {
+app.put('/actualizar-historial', async (req, res) => {
     const {
         id_historial,
         fecha,
@@ -1870,7 +1870,7 @@ app.post('/insert-membresia', async (req, res) => {
 
 // Insertar una máquina
 app.post('/insertar-maquina', async (req, res) => {
-    const { id_maquina, descripcion, estado, dificultad } = req.body;
+    const {descripcion, estado, dificultad } = req.body;
     let connection;
 
     try {
@@ -1880,10 +1880,9 @@ app.post('/insertar-maquina', async (req, res) => {
         // Llamar al procedimiento para insertar la máquina
         await connection.execute(
             `BEGIN 
-                super_user.insertar_maquina(:id_maquina, :descripcion, :estado, :dificultad); 
+                super_user.insertar_maquina(:descripcion, :estado, :dificultad); 
              END;`,
             {
-                id_maquina: id_maquina,
                 descripcion: descripcion,
                 estado: estado,
                 dificultad: dificultad
@@ -1910,7 +1909,7 @@ app.post('/insertar-maquina', async (req, res) => {
 
 // Insertar una rutina
 app.post('/insertar-rutina', async (req, res) => {
-    const { id_rutina, cliente, instructor, maquina, fecha, horas } = req.body;
+    const { cliente, instructor, maquina, fecha, horas } = req.body;
     let connection;
 
     try {
@@ -1920,10 +1919,9 @@ app.post('/insertar-rutina', async (req, res) => {
         // Llamar al procedimiento para insertar la rutina
         await connection.execute(
             `BEGIN 
-                super_user.insertar_rutina(:id_rutina, :cliente, :instructor, :maquina, TO_DATE(:fecha, 'YYYY-MM-DD'), :horas); 
+                super_user.insertar_rutina(:cliente, :instructor, :maquina, TO_DATE(:fecha, 'YYYY-MM-DD'), :horas); 
              END;`,
             {
-                id_rutina: id_rutina,
                 cliente: cliente,
                 instructor: instructor,
                 maquina: maquina,
