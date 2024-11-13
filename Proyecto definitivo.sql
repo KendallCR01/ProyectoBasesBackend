@@ -1,20 +1,5 @@
----Por si hay que borrarlo todo y volver a correr el scipt:-----
 
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
-DROP TABLESPACE gimnasio INCLUDING CONTENTS AND DATAFILES;
-DROP USER super_user CASCADE;
-DROP TABLE historial_curso;
-DROP TABLE rutinas;
-DROP TABLE cursos;
-DROP TABLE trabajador;
-DROP TABLE maquinas;
-DROP TABLE membresia;
-DROP TABLE cliente;
-DROP ROLE instructor;
-DROP ROLE usuario_cliente;
-DROP ROLE soporte;
-
----Aqui tambien cambie mi direccion del tablespace----
 
 conn sys/root@localhost/XE as sysdba;
 
@@ -1783,74 +1768,9 @@ BEGIN
 END;
 /
 
-
--- Inserts para probar
-
-
--- Insertar registros en la tabla cliente
-INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
-VALUES (123456, 'Juan', 'Perez', 'Gomez', 'Calle Ficticia 123', 'juan.perez@email.com', TO_DATE('2024-01-15', 'YYYY-MM-DD'), 987654321, 123456789);
-
- 
-INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
-VALUES (654321, 'Ana', 'Martinez', 'Lopez', 'Avenida Central 456', 'ana.martinez@email.com', TO_DATE('2024-02-20', 'YYYY-MM-DD'), 987654322, 123456788);
- 
--- Insertar registros en la tabla membresia
-INSERT INTO membresia (id, id_cliente, monto, estado, fecha)
-VALUES (1, 123456, 150, 'Activa', TO_DATE('2024-01-15', 'YYYY-MM-DD'));
- 
-INSERT INTO membresia (id, id_cliente, monto, estado, fecha)
-VALUES (2, 654321, 120, 'Inactiva', TO_DATE('2024-02-20', 'YYYY-MM-DD'));
- 
--- Insertar registros en la tabla maquinas
-INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-VALUES (1, 'Maquina Cardio', 'Disponible', 'Alta');
- 
-INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-VALUES (2, 'Maquina Pesas', 'En reparacion', 'Media');
-
-INSERT INTO maquinas (id_maquina, descripcion, estado, dificultad)
-VALUES (3, 'Maquina correr', 'En reparacion', 'facil');
-
- 
--- Insertar registros en la tabla trabajador
-INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (1, 'Carlos', 'Gonzalez', 'Sanchez', 'Calle Ficticia 789', 'carlos.gonzalez@email.com', 987654323, 123456787, TO_DATE('2023-11-01', 'YYYY-MM-DD'), 'instructor');
- 
-INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (2, 'Marta', 'Rodríguez', 'Pérez', 'Avenida Principal 101', 'marta.rodriguez@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
- 
--- Insertar registros en la tabla rutinas
-INSERT INTO rutinas (id_rutina, cliente, instructor, maquina, fecha, horas)
-VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 2);
- 
-INSERT INTO rutinas (id_rutina, cliente, instructor, maquina, fecha, horas)
-VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 1);
- 
- 
- -- Insertar registros en la tabla cursos
-INSERT INTO cursos (id_curso, descripcion, horario, disponibilidad)
-VALUES (1, 'Fuerza', '10:00-12:00', 'Disponible');
- 
-INSERT INTO cursos (id_curso, descripcion, horario, disponibilidad)
-VALUES (2, 'Cardio', '12:00-14:00', 'Disponible');
-
--- Insertar registros en la tabla historial_curso
-INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
-VALUES (1, 123456, 1, 1, TO_DATE('2024-03-01', 'YYYY-MM-DD'), 5);
- 
-INSERT INTO historial_curso (id_historial, cliente, instructor, curso, fecha, horas)
-VALUES (2, 654321, 2, 2, TO_DATE('2024-03-02', 'YYYY-MM-DD'), 4);
-
-INSERT INTO trabajador (cod_instructor, nombre, apellido1, apellido2, direccion, e_mail, tel_cel, tel_habitacion, fecha_contratacion, rool)
-VALUES (222, 'Arnold', 'Rodríguez', 'Pérez', 'Avenida Principal 101', 'arn.rodriguez@email.com', 987654324, 123456786, TO_DATE('2023-11-10', 'YYYY-MM-DD'), 'soporte');
-
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
 
-CREATE USER user_123 IDENTIFIED BY 12345;
-GRANT instructor TO user_123;
-GRANT EXECUTE ANY PROCEDURE TO user_123;
-GRANT CREATE SESSION TO user_123;
+--No se crean clientes porque se crean en caliente
 
 --Instructores del sistema--
 
@@ -1901,16 +1821,16 @@ GRANT EXECUTE ON super_user.obtener_usuario TO soporte;
 --Desinscribirse: el cliente puede retirar su inscripción al gimnasio siempre y cuando se encuentre al día con los pagos.  
 
 -- Permisos para procedimientos de 'membresia'
-GRANT EXECUTE ON sp_insert_membresia TO usuario_cliente;--
-GRANT EXECUTE ON sp_delete_membresia TO usuario_cliente;--
-GRANT EXECUTE ON actualizar_membresia TO usuario_cliente;--
-GRANT EXECUTE ON buscar_membresia_membresia TO usuario_cliente; -- Procedimiento para buscar una membresía por su ID
-GRANT EXECUTE ON obtener_todas_membresias TO usuario_cliente; --
+GRANT EXECUTE ON sp_insert_membresia TO usuario_cliente;
+GRANT EXECUTE ON sp_delete_membresia TO usuario_cliente;
+GRANT EXECUTE ON actualizar_membresia TO usuario_cliente;
+GRANT EXECUTE ON buscar_membresia_membresia TO usuario_cliente; 
+GRANT EXECUTE ON obtener_todas_membresias TO usuario_cliente; 
 GRANT EXECUTE ON buscar_membresia_por_cliente TO usuario_cliente;
 
 -- Permisos para procedimientos de 'clientes'
-GRANT EXECUTE ON eliminar_cliente TO usuario_cliente;--     
-GRANT EXECUTE ON actualizar_cliente  TO usuario_cliente;--
+GRANT EXECUTE ON eliminar_cliente TO usuario_cliente;   
+GRANT EXECUTE ON actualizar_cliente  TO usuario_cliente;
 GRANT EXECUTE ON mostrar_informacion_cliente TO usuario_cliente;
 
 ---------------------------instructor permiso procedures---------------------------------------
@@ -1919,51 +1839,51 @@ GRANT EXECUTE ON mostrar_informacion_cliente TO usuario_cliente;
 -- dar mantenimiento (select, insert, update y delete) a las rutinas, maquinas, clientes, cursos, historial de los cursos, etc. 
 
 -- Permisos para procedimientos de 'rutinas'
-GRANT EXECUTE ON insertar_rutina TO instructor;--
-GRANT EXECUTE ON eliminar_rutina TO instructor;--
-GRANT EXECUTE ON actualizar_rutina TO instructor;--
-GRANT EXECUTE ON buscar_rutina TO instructor;--
-GRANT EXECUTE ON obtener_todas_rutinas TO instructor;--
+GRANT EXECUTE ON insertar_rutina TO instructor;
+GRANT EXECUTE ON eliminar_rutina TO instructor;
+GRANT EXECUTE ON actualizar_rutina TO instructor;
+GRANT EXECUTE ON buscar_rutina TO instructor;
+GRANT EXECUTE ON obtener_todas_rutinas TO instructor;
 
 -- Permisos para procedimientos de 'maquinas'
-GRANT EXECUTE ON insertar_maquina TO instructor;--
-GRANT EXECUTE ON eliminar_maquina TO instructor;--
-GRANT EXECUTE ON actualizar_maquina TO instructor;--
-GRANT EXECUTE ON buscar_maquina TO instructor;--
-GRANT EXECUTE ON obtener_todas_maquinas TO instructor;--
+GRANT EXECUTE ON insertar_maquina TO instructor;
+GRANT EXECUTE ON eliminar_maquina TO instructor;
+GRANT EXECUTE ON actualizar_maquina TO instructor;
+GRANT EXECUTE ON buscar_maquina TO instructor;
+GRANT EXECUTE ON obtener_todas_maquinas TO instructor;
 
 -- Permisos para procedimientos de 'clientes'
-GRANT EXECUTE ON insertar_cliente TO instructor;--
-GRANT EXECUTE ON eliminar_cliente TO instructor;--
-GRANT EXECUTE ON actualizar_cliente  TO instructor;--
-GRANT EXECUTE ON mostrar_informacion_cliente TO instructor;--
-GRANT EXECUTE ON obtener_todos_clientes TO instructor;--
+GRANT EXECUTE ON insertar_cliente TO instructor;
+GRANT EXECUTE ON eliminar_cliente TO instructor;
+GRANT EXECUTE ON actualizar_cliente  TO instructor;
+GRANT EXECUTE ON mostrar_informacion_cliente TO instructor;
+GRANT EXECUTE ON obtener_todos_clientes TO instructor;
 
 -- Permisos para procedimientos de 'cursos'
-GRANT EXECUTE ON insertar_curso TO instructor;--
-GRANT EXECUTE ON eliminar_curso TO instructor;--
-GRANT EXECUTE ON editar_curso TO instructor;--
-GRANT EXECUTE ON buscar_curso TO instructor;--
-GRANT EXECUTE ON obtener_todos_cursos TO instructor;--
+GRANT EXECUTE ON insertar_curso TO instructor;
+GRANT EXECUTE ON eliminar_curso TO instructor;
+GRANT EXECUTE ON editar_curso TO instructor;
+GRANT EXECUTE ON buscar_curso TO instructor;
+GRANT EXECUTE ON obtener_todos_cursos TO instructor;
 
 -- Permisos para procedimientos de 'historial_curso'
-GRANT EXECUTE ON insertar_historial_curso TO instructor;--
-GRANT EXECUTE ON eliminar_historial_curso TO instructor;--
-GRANT EXECUTE ON actualizar_historial_curs TO instructor;--
-GRANT EXECUTE ON buscar_historial_curso TO instructor;--
-GRANT EXECUTE ON obtener_todos_historial_curso TO instructor;--
+GRANT EXECUTE ON insertar_historial_curso TO instructor;
+GRANT EXECUTE ON eliminar_historial_curso TO instructor;
+GRANT EXECUTE ON actualizar_historial_curso TO instructor;
+GRANT EXECUTE ON buscar_historial_curso TO instructor;
+GRANT EXECUTE ON obtener_todos_historial_curso TO instructor;
 
 -- Permisos para procedimientos de 'membresia'
-GRANT EXECUTE ON sp_insert_membresia TO instructor;--
-GRANT EXECUTE ON sp_delete_membresia TO instructor;--
-GRANT EXECUTE ON actualizar_membresia TO instructor;--
-GRANT EXECUTE ON buscar_membresia TO instructor;--
-GRANT EXECUTE ON obtener_todas_membresias TO instructor;--
+GRANT EXECUTE ON sp_insert_membresia TO instructor;
+GRANT EXECUTE ON sp_delete_membresia TO instructor;
+GRANT EXECUTE ON actualizar_membresia TO instructor;
+GRANT EXECUTE ON buscar_membresia TO instructor;
+GRANT EXECUTE ON obtener_todas_membresias TO instructor;
 GRANT EXECUTE ON buscar_membresia_por_cliente TO instructor;
 
 -- Permiso de solo SELECT para la tabla 'instructor'
-GRANT EXECUTE ON buscar_trabajador TO instructor;--
-GRANT EXECUTE ON obtener_todos_trabajadores TO instructor;--
+GRANT EXECUTE ON buscar_trabajador TO instructor;
+GRANT EXECUTE ON obtener_todos_trabajadores TO instructor;
 
 COMMIT;
 
