@@ -1832,9 +1832,7 @@ app.post('/insert-membresia', async (req, res) => {
 
         // Llamar al procedimiento almacenado para insertar membresía
         await connection.execute(
-            `BEGIN 
-             super_user.sp_insert_membresia(:id_cliente, :monto, :estado, TO_DATE(:fecha, 'YYYY-MM-DD')); 
-            END;`,
+            `BEGIN super_user.sp_insert_membresia(:id_cliente, :monto, :estado, TO_DATE(:fecha, 'YYYY-MM-DD')); END;`,
             {
                 id_cliente,
                 monto,
@@ -1849,18 +1847,22 @@ app.post('/insert-membresia', async (req, res) => {
 
     } catch (error) {
         console.error('Error al insertar la membresía:', error);
-        res.status(500).json({
-            status: 'error',
-            message: 'Error al insertar la membresía',
-            error: error.message
-        });
+
+        // Manejo de errores específicos
+        if (error.message.includes('ORA-20002')) {
+            res.status(409).json({ status: 'error', message: 'La membresía ya existe.' });
+        } else if (error.message.includes('ORA-20003')) {
+            res.status(404).json({ status: 'error', message: 'El cliente especificado en la membresía no existe.' });
+        } else {
+            res.status(500).json({ status: 'error', message: 'Error inesperado: ' + error.message });
+        }
     } finally {
-        // Asegurarse de cerrar la conexión
+        // Cerrar la conexión
         if (connection) {
             try {
                 await connection.close();
-            } catch (error) {
-                console.error('Error al cerrar la conexión:', error);
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
             }
         }
     }
