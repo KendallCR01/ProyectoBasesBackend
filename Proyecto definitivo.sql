@@ -882,8 +882,8 @@ END mostrar_informacion_cliente;
 
 
 
---------------Procedimiento para mostrar la información del instructor por nombre--------------
 
+-----------------------------función para optener años del trabajador------------------------
 --para la reslucion correcta del problema debemos crear una funcion que obtenga los años que tiene de trabajar el instrcutor 
 --entonces tomamos la fecha de entrada y se hace la conversion para el correcto resultado. 
 
@@ -900,8 +900,8 @@ BEGIN
 END obtener_anios_trabajo;
 /
 
-
---aqui se usa la funcion anterior para mostrar en especifico los años, ademas se muestra 
+--------------Procedimiento para mostrar la información del instructor por nombre--------------
+--aqui se usa la funcion anterior para mostrar en especifico los años, ademas se muestra toda la informacion del instructor
 
 CREATE OR REPLACE PROCEDURE mostrar_informacion_instructor (
     p_cod_instructor INT,
@@ -917,36 +917,19 @@ BEGIN
         LEFT JOIN rutinas r ON t.cod_instructor = r.instructor
         LEFT JOIN historial_curso hc ON t.cod_instructor = hc.instructor
         LEFT JOIN cursos cu ON hc.curso = cu.id_curso
-        WHERE t.cod_instructor = p_cod_instructor;  -- Cambié la condición para que busque por `cod_instructor`
+        WHERE t.cod_instructor = p_cod_instructor;  -- Cambié la condición para que busque por "cod_instructor"
 END mostrar_informacion_instructor;
 /
 
 
------------------------------función para optener años del trabajador------------------------
+-------------------------procedures de insert -------------------------------------
+--En esta seccion se crean los procedures para los selects, inserts, deletes y updates, por medio de estos se realizan las peticiones 
+--como se pidio en el documento, entonces luego tenemos que darle los permisos dependiendo de cada rol
 
 
+------------------------------cliente----------------------------------------------
 
---SET SERVEROUTPUT ON;
-
-
--- Intenta insertar un cliente con datos que ya existan para verificar el mensaje de duplicado.
---INSERT INTO cliente (cedula, nombre, apellido1, apellido2, direccion, e_mail, fecha_inscripcion, celular, tel_habitacion)
---VALUES (123456789, 'Pedro', 'Gomez', 'Martinez', 'Calle 123', 'pedro@mail.com', TO_DATE('2024-01-01', 'YYYY-MM-DD'), 12345678, 87654321);
-
--- Intenta actualizar un cliente cambiando un campo que no sea clave primaria o foránea.
---UPDATE cliente SET nombre = 'Juan Carlos' WHERE cedula = 123456789;
-
-
--- Intenta eliminar un cliente que esté relacionado con otras tablas para observar el mensaje de restricción.
---DELETE FROM cliente WHERE cedula = 123456789;
-
-
-------------procedures de insert -----------------------------------
-
---------------------------------cliente--------------------------------------------
-
-
-----------------------------insert--------------------------------------------
+----------------------------insert-------------------------------------------------
 CREATE OR REPLACE PROCEDURE insertar_cliente (
     p_cedula           INT,
     p_nombre           VARCHAR2,
@@ -981,7 +964,7 @@ CREATE OR REPLACE PROCEDURE actualizar_cliente (
     p_nombre IN cliente.nombre%TYPE,
     p_apellido1 IN cliente.apellido1%TYPE,
     p_direccion IN cliente.direccion%TYPE,
-    p_resultado OUT NUMBER  -- Nuevo parámetro de salida
+    p_resultado OUT NUMBER  
 ) AS
 BEGIN
     UPDATE cliente
@@ -1096,9 +1079,9 @@ BEGIN
 
 EXCEPTION
     WHEN OTHERS THEN
-        p_resultado := 0;  -- Indicar error en la actualización
+        p_resultado := 0; 
         ROLLBACK;
-        RAISE;  -- Re-lanzar la excepción para propagar el error
+        RAISE;  --
 END actualizar_membresia;
 /
 
@@ -1115,7 +1098,7 @@ CREATE OR REPLACE PROCEDURE sp_delete_membresia(
            RAISE_APPLICATION_ERROR(-20036, 'La membresía no existe o ya ha sido eliminada.');
      END IF;
  
-      NULL;  -- El procedimiento en este caso no necesita imprimir, solo eliminar.
+      NULL;  
   EXCEPTION
        WHEN OTHERS THEN
           RAISE_APPLICATION_ERROR(-20037, 'Error al eliminar la membresía: ' || SQLERRM);
@@ -1166,7 +1149,7 @@ BEGIN
     SET cliente = p_cliente,
         instructor = p_instructor,
         maquina = p_maquina,
-        fecha = TO_DATE(p_fecha, 'YYYY-MM-DD'), -- Convertir la fecha al formato adecuado
+        fecha = TO_DATE(p_fecha, 'YYYY-MM-DD'), -- Convierte la fecha al formato adecuado
         horas = p_horas
     WHERE id_rutina = p_id_rutina;
     
@@ -1179,7 +1162,7 @@ BEGIN
     
 EXCEPTION
     WHEN OTHERS THEN
-        p_resultado := -1;  -- Error en la actualización
+        p_resultado := -1; 
         RAISE_APPLICATION_ERROR(-20001, 'Error al actualizar la rutina: ' || SQLERRM);
 END;
 /
@@ -1612,6 +1595,19 @@ BEGIN
         WHERE id = p_id;
 END;
 /
+
+-- Procedimiento para buscar una membresía por el ID del cliente
+CREATE OR REPLACE PROCEDURE buscar_membresia_por_cliente (
+    p_id_cliente INT,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT id, id_cliente, monto, estado, fecha
+        FROM membresia
+        WHERE id_cliente = p_id_cliente;
+END;
+/
  
 -- Procedimiento para buscar una rutina por su ID
 CREATE OR REPLACE PROCEDURE buscar_rutina (
@@ -1678,8 +1674,6 @@ BEGIN
         WHERE id_curso = p_id_curso;
 END;
 /
-
-
 
 
 -- Procedimiento para obtener todos los registros de la tabla Cliente
@@ -1892,6 +1886,10 @@ GRANT EXECUTE ON super_user.obtener_usuario TO instructor;
 GRANT EXECUTE ON super_user.obtener_usuario TO soporte;
 
 ---------------------------usuario_cliente permiso procedures---------------------------------
+--se le asigna los permisos 
+
+--cada usuario se puede inscribir al gimnasio por medio de la aplicación.
+--Desinscribirse: el cliente puede retirar su inscripción al gimnasio siempre y cuando se encuentre al día con los pagos.  
 
 -- Permisos para procedimientos de 'membresia'
 GRANT EXECUTE ON sp_insert_membresia TO usuario_cliente;--
@@ -1899,6 +1897,7 @@ GRANT EXECUTE ON sp_delete_membresia TO usuario_cliente;--
 GRANT EXECUTE ON actualizar_membresia TO usuario_cliente;--
 GRANT EXECUTE ON buscar_membresia_membresia TO usuario_cliente; -- Procedimiento para buscar una membresía por su ID
 GRANT EXECUTE ON obtener_todas_membresias TO usuario_cliente; --
+GRANT EXECUTE ON buscar_membresia_por_cliente TO usuario_cliente;
 
 -- Permisos para procedimientos de 'clientes'
 GRANT EXECUTE ON eliminar_cliente TO usuario_cliente;--     
@@ -1906,6 +1905,9 @@ GRANT EXECUTE ON actualizar_cliente  TO usuario_cliente;--
 GRANT EXECUTE ON mostrar_informacion_cliente TO usuario_cliente;
 
 ---------------------------instructor permiso procedures---------------------------------------
+
+--esta opción es para los instructores o personal del gimnasio, en caso de que requieran
+-- dar mantenimiento (select, insert, update y delete) a las rutinas, maquinas, clientes, cursos, historial de los cursos, etc. 
 
 -- Permisos para procedimientos de 'rutinas'
 GRANT EXECUTE ON insertar_rutina TO instructor;--
@@ -1948,6 +1950,7 @@ GRANT EXECUTE ON sp_delete_membresia TO instructor;--
 GRANT EXECUTE ON actualizar_membresia TO instructor;--
 GRANT EXECUTE ON buscar_membresia TO instructor;--
 GRANT EXECUTE ON obtener_todas_membresias TO instructor;--
+GRANT EXECUTE ON buscar_membresia_por_cliente TO instructor;
 
 -- Permiso de solo SELECT para la tabla 'instructor'
 GRANT EXECUTE ON buscar_trabajador TO instructor;--

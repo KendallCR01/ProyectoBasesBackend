@@ -1959,32 +1959,31 @@ app.get('/ver-auditorias', async (req, res) => {
         // Establecer la conexión con la base de datos
         connection = await oracledb.getConnection(dbConfig);
 
-        // Llamar al procedimiento para ver las auditorías
+        // Ejecutar el procedimiento almacenado
         const result = await connection.execute(
-            `BEGIN 
-                super_user.ver_auditorias(:cursor); 
-             END;`,
+            `BEGIN super_user.ver_auditorias(:cursor); END;`,
             {
-                cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT }
+                cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT } // Definir el cursor de salida
             }
         );
 
-        // Obtener los resultados del cursor
-        const resultSet = result.outBinds.cursor;
-        const rows = [];
+        const cursor = result.outBinds.cursor;
+        const rows = await cursor.getRows(); // Obtener las filas del cursor
 
-        let row;
-        while ((row = await resultSet.getRow())) {
-            rows.push(row);
-        }
+        // Mapear los resultados a un formato JSON con nombres descriptivos
+        const auditorias = rows.map(row => ({
+            username: row[0],
+            obj_name: row[1],
+            action_name: row[2],
+            timestamp: row[3],
+            returncode: row[4]
+        }));
 
-        await resultSet.close();
-
-        res.json(rows);
+        res.json(auditorias); // Devolver los datos como un arreglo JSON
 
     } catch (err) {
-        console.error('Error al ver las auditorías:', err);
-        res.status(500).json({ message: 'Error al ver las auditorías', error: err.message });
+        console.error('Error al conectar a la base de datos:', err);
+        res.status(500).send('Error al conectar a la base de datos');
     } finally {
         // Asegurarse de cerrar la conexión
         if (connection) {
@@ -1996,6 +1995,7 @@ app.get('/ver-auditorias', async (req, res) => {
         }
     }
 });
+
 
 app.get('/buscar-membresia-cliente/:id_cliente', async (req, res) => {
     let connection;
