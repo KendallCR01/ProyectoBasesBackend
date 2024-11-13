@@ -1998,6 +1998,56 @@ app.get('/ver-auditorias', async (req, res) => {
     }
 });
 
+app.get('/buscar-membresia-cliente/:id_cliente', async (req, res) => {
+    let connection;
+    const id_cliente = req.params.id_cliente;
+
+    try {
+        // Establecer la conexión con la base de datos
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Ejecutar el procedimiento almacenado
+        const result = await connection.execute(
+            `BEGIN super_user.buscar_membresia_por_cliente(:id_cliente, :cursor); END;`,
+            {
+                id_cliente: id_cliente, // Parámetro para el procedimiento
+                cursor: { type: oracledb.CURSOR, dir: oracledb.BIND_OUT } // Definir el cursor de salida
+            }
+        );
+
+        const cursor = result.outBinds.cursor;
+        const rows = await cursor.getRows(); // Obtener las filas del cursor
+
+        // Si se encuentran resultados, formateamos los datos
+        if (rows.length > 0) {
+            const membresias = rows.map(row => ({
+                id: row[0],
+                id_cliente: row[1],
+                monto: row[2],
+                estado: row[3],
+                fecha: row[4]
+            }));
+            res.json(membresias); // Devolver los datos como un arreglo JSON
+        } else {
+            res.status(404).json({ message: 'No se encontraron membresías para este cliente' });
+        }
+
+    } catch (err) {
+        console.error('Error al conectar a la base de datos:', err);
+        res.status(500).send('Error al conectar a la base de datos');
+    } finally {
+        // Asegurarse de cerrar la conexión
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (err) {
+                console.error('Error al cerrar la conexión:', err);
+            }
+        }
+    }
+});
+
+
 // Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);

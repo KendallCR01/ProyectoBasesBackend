@@ -83,6 +83,10 @@ conn super_user/root@localhost/XE;
 
 ---Aqui tambien dr agrega el tablespace al final creo..----
 
+--A continuacion se realiza la creacion de las tablas justo como 
+--se hace en el diagrama entidad-relacion brindado en el documento  
+-- nota: en cada se pone "TABLESPACE gimnasio;" para asegurarnos que se cree en ese espacio
+
 CREATE TABLE cliente (
     cedula INT PRIMARY KEY,
     nombre VARCHAR2(30),
@@ -122,7 +126,7 @@ CREATE TABLE trabajador (
     tel_habitacion INT,
     fecha_contratacion DATE,
     rool VARCHAR2(30),
-    CONSTRAINT chk_rool CHECK (rool IN ('instructor', 'soporte'))
+    CONSTRAINT chk_rool CHECK (rool IN ('instructor', 'soporte'))--solo son validos los roles instructor y soporte 
 )TABLESPACE gimnasio; 
 
 CREATE TABLE rutinas (
@@ -157,10 +161,14 @@ CREATE TABLE historial_curso (
     FOREIGN KEY (curso) REFERENCES Cursos(id_curso)
 )TABLESPACE gimnasio; 
 
-/*Para habilitar las auditorias*/
+--La linea "ALTER SYSTEM SET audit_trail=db SCOPE=SPFILE;" se utiliza para 
+--habilitar las auditorias, este comando cambia el parámetro de configuración "audit_trail",
+-- que determina cómo y dónde se almacenarán los registros de auditoría
 ALTER SYSTEM SET audit_trail=db SCOPE=SPFILE;
 
----Algo va mal con esto
+
+
+--aqui despues de activar las auditorias, le creamos la auditoria a cada tabla como tal.
 AUDIT ALL ON Cliente;
 AUDIT ALL ON Membresia;
 AUDIT ALL ON Rutinas;
@@ -169,12 +177,16 @@ AUDIT ALL ON Trabajador;
 AUDIT ALL ON Historial_curso;
 AUDIT ALL ON Cursos;
 
---Aqui agregue esto, solo asi se pueden crear roles y no tira error, no se por que..
+--Antes de la creación de usuarios se deben setear el parámetro:
 ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;  
 
+--Creamos el rol del cliente para luego brindarle los privilegios necesarios para la resolucion del sistema.
 CREATE ROLE usuario_cliente;
 
-
+--aqui le damos permisos al rol usuario_cliente con el objetivo de no asignar los roles cada vez que se crea el usuario
+--esto tambien es como se debe hacer, ya que de la otra manera no es una buena practica en nuestro script
+-- en este caso le damos permisos de insertar y borrar en la tabla cliente al rol usuario_cliente y asi susesivamente
+--con las siguientes 6 lineas del script.
 GRANT INSERT, DELETE ON cliente TO usuario_cliente;
 GRANT SELECT ON cliente TO usuario_cliente;
 GRANT SELECT ON cursos TO usuario_cliente;
@@ -182,6 +194,7 @@ GRANT UPDATE ON cliente TO usuario_cliente;
 GRANT SELECT ON historial_curso TO usuario_cliente;
 GRANT CREATE SESSION TO usuario_cliente;
 
+--Creamos el rol del instructor para luego brindarle los privilegios necesarios para la resolucion del sistema.
 CREATE ROLE instructor;
 
 -- Asignar permisos al rol 'instructor' para acceder a las tablas necesarias
@@ -203,6 +216,10 @@ GRANT DBA TO soporte;
 
 
 
+--A continuación vamos a crear los triggers, estos se realizan con el objetivo de hacer
+--las verificaciones correctas y mandar los errores al FrontEnd, estos se van a realizar
+--para cada uno de los inserts, update, delete y select de todas las tablas creadas anteriormente. 
+
 ---------------------triggers insert----------------------------------------- 
 
 ---------------------trigger Cliente----------------------------------------- 
@@ -219,11 +236,11 @@ BEGIN
     WHERE cedula = :NEW.cedula;
 
     IF v_existente > 0 THEN
-        RAISE_APPLICATION_ERROR(-20001, 'El cliente ya existe.');
+        RAISE_APPLICATION_ERROR(-20001, 'El cliente ya existe.'); -- error si el cliente ya existe 
     ELSE
         DBMS_OUTPUT.PUT_LINE('Información insertada correctamente: Cedula: ' || :NEW.cedula || 
                              ', Nombre: ' || :NEW.nombre || ', Apellido: ' || :NEW.apellido1 || 
-                             ', Dirección: ' || :NEW.direccion);
+                             ', Dirección: ' || :NEW.direccion);--inserta el cliente
     END IF;
 
 EXCEPTION
@@ -354,7 +371,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN
         DBMS_OUTPUT.PUT_LINE('Ocurrió un error inesperado en trg_insert_maquinas: ' || SQLERRM);
-        RAISE; -- Re-lanzar la excepción
+        RAISE; 
 END;
 /
 
@@ -867,15 +884,24 @@ END mostrar_informacion_cliente;
 
 --------------Procedimiento para mostrar la información del instructor por nombre--------------
 
+--para la reslucion correcta del problema debemos crear una funcion que obtenga los años que tiene de trabajar el instrcutor 
+--entonces tomamos la fecha de entrada y se hace la conversion para el correcto resultado. 
 
 CREATE OR REPLACE FUNCTION obtener_anios_trabajo(fecha_contratacion DATE) RETURN NUMBER IS
     v_anios_trabajo NUMBER;
 BEGIN
     v_anios_trabajo := FLOOR(MONTHS_BETWEEN(SYSDATE, fecha_contratacion) / 12);
     RETURN v_anios_trabajo;
+
+--La función MONTHS_BETWEEN calcula el número total de meses entre dos fechas.
+--SYSDATE es la fecha actual (hoy).
+--fecha_contratacion es la fecha en la que el empleado fue contratado.
+
 END obtener_anios_trabajo;
 /
 
+
+--aqui se usa la funcion anterior para mostrar en especifico los años, ademas se muestra 
 
 CREATE OR REPLACE PROCEDURE mostrar_informacion_instructor (
     p_cod_instructor INT,
