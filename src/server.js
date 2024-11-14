@@ -918,41 +918,52 @@ app.put('/actualizar-cliente', async (req, res) => {
 });
 
 app.put('/actualizar-curso', async (req, res) => {
-    const { id_curso, descripcion, horario, disponibilidad } = req.body;
+    const { id_curso, descripcion, horario, disponibilidad } = req.body; // Obtener los datos del cuerpo de la solicitud
     let connection;
 
     try {
+        // Establecer conexión a la base de datos
         connection = await oracledb.getConnection(dbConfig);
 
+        // Llamar al procedimiento almacenado para actualizar curso
         const result = await connection.execute(
             `BEGIN 
-                super_user.editar_curso(:id_curso, :descripcion, :horario, :disponibilidad); 
-             END;`,
+             super_user.editar_curso(:id_curso, :descripcion, :horario, :disponibilidad, :resultado); 
+            END;`,
             {
-                id_curso: id_curso,
-                descripcion: descripcion,
-                horario: horario,
-                disponibilidad: disponibilidad,
-                resultado: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER }
-            }
+                id_curso,
+                descripcion,
+                horario,
+                disponibilidad,
+                resultado: { dir: oracledb.BIND_OUT, type: oracledb.NUMBER } // Parámetro de salida
+            },
+            { autoCommit: true }
         );
 
-        // Verificar el resultado del procedimiento
-        if (result.outBinds.resultado === 1) {
-            res.json({ message: 'Curso actualizado con éxito' });
+        const resultado = result.outBinds.resultado;
+
+        if (resultado === 1) {
+            res.status(200).json({ status: 'success', message: 'Curso actualizado correctamente.' });
+        } else if (resultado === 0) {
+            res.status(404).json({ status: 'error', message: 'Curso no encontrado.' });
         } else {
-            res.status(404).json({ message: 'Curso no encontrado' });
+            res.status(500).json({ status: 'error', message: 'Error al actualizar el curso.' });
         }
 
-    } catch (err) {
-        console.error('Error al actualizar el curso:', err);
-        res.status(500).json({ message: 'Error al actualizar el curso', error: err.message });
+    } catch (error) {
+        console.error('Error al actualizar el curso:', error);
+        res.status(500).json({
+            status: 'error',
+            message: 'Error al actualizar el curso',
+            error: error.message
+        });
     } finally {
+        // Asegurarse de cerrar la conexión
         if (connection) {
             try {
                 await connection.close();
-            } catch (err) {
-                console.error('Error al cerrar la conexión:', err);
+            } catch (error) {
+                console.error('Error al cerrar la conexión:', error);
             }
         }
     }

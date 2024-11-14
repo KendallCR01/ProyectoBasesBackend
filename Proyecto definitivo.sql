@@ -1485,30 +1485,32 @@ END;
 
 
 ----------------------------update--------------------------------------------
-CREATE OR REPLACE PROCEDURE editar_curso(
-    p_id_curso NUMBER,
-    p_descripcion VARCHAR2,
-    p_horario VARCHAR2,
-    p_disponibilidad VARCHAR2
-    p_resultado OUT NUMBER  
+CREATE OR REPLACE PROCEDURE editar_curso_curso(
+    p_id_curso IN cursos.id_curso%TYPE,
+    p_descripcion IN cursos.descripcion%TYPE,
+    p_horario IN cursos.horario%TYPE,
+    p_disponibilidad IN cursos.disponibilidad%TYPE,
+    p_resultado OUT NUMBER
 ) AS
 BEGIN
-    -- Actualizar la tabla en una sola sentencia si hay parámetros proporcionados
     UPDATE cursos
-    SET 
-        descripcion = NVL(p_descripcion, descripcion),
-        horario = NVL(p_horario, horario),
-        disponibilidad = NVL(p_disponibilidad, disponibilidad)
+    SET descripcion = p_descripcion,
+        horario = p_horario,
+        disponibilidad = p_disponibilidad
     WHERE id_curso = p_id_curso;
 
     IF SQL%ROWCOUNT > 0 THEN
-        p_resultado := 1;  -- Se actualizó el cliente
+        p_resultado := 1;  -- Se actualizó el curso
     ELSE
-        p_resultado := 0;  -- No se encontró el cliente
+        p_resultado := 0;  -- No se encontró el curso
     END IF;
 
     COMMIT;
-END;
+EXCEPTION
+    WHEN OTHERS THEN
+        p_resultado := -1;  -- Error en la actualización
+        RAISE_APPLICATION_ERROR(-20001, 'Error al actualizar el curso: ' || SQLERRM);
+END editar_curso_curso;
 /
 
 
