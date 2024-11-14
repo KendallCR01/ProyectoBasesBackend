@@ -1012,7 +1012,7 @@ END eliminar_cliente;
 
 ----------------------------insert--------------------------------------------
 CREATE SEQUENCE seq_id_membresia
-START WITH 10
+START WITH 1
 INCREMENT BY 1
 NOCACHE;
 
@@ -1090,7 +1090,7 @@ CREATE OR REPLACE PROCEDURE sp_delete_membresia(
 
 ----------------------------insert--------------------------------------------
 CREATE SEQUENCE seq_id_rutina
-START WITH 10
+START WITH 1
 INCREMENT BY 1
 NOCACHE;
 
@@ -1177,9 +1177,10 @@ END;
 
 ----------------------------insert--------------------------------------------
 CREATE SEQUENCE seq_id_maquina
-START WITH 10
+START WITH 1
 INCREMENT BY 1
 NOCACHE;
+
 
 
 CREATE OR REPLACE PROCEDURE insertar_maquina(
@@ -1381,7 +1382,7 @@ CREATE OR REPLACE PROCEDURE eliminar_trabajador(
 
 ----------------------------insert--------------------------------------------
 CREATE SEQUENCE seq_id_historial_curso
-START WITH 5
+START WITH 1
 INCREMENT BY 1
 NOCACHE;
 
@@ -1462,7 +1463,7 @@ CREATE OR REPLACE PROCEDURE eliminar_historial_curso(
 
 ----------------------------insert--------------------------------------------
 CREATE SEQUENCE seq_id_curso
-START WITH 5
+START WITH 1
 INCREMENT BY 1
 NOCACHE;
 
@@ -1817,7 +1818,7 @@ GRANT EXECUTE ON super_user.obtener_usuario TO soporte;
 GRANT EXECUTE ON sp_insert_membresia TO usuario_cliente;
 GRANT EXECUTE ON sp_delete_membresia TO usuario_cliente;
 GRANT EXECUTE ON actualizar_membresia TO usuario_cliente;
-GRANT EXECUTE ON buscar_membresia_membresia TO usuario_cliente; 
+GRANT EXECUTE ON buscar_membresia TO usuario_cliente; 
 GRANT EXECUTE ON obtener_todas_membresias TO usuario_cliente; 
 GRANT EXECUTE ON buscar_membresia_por_cliente TO usuario_cliente;
 

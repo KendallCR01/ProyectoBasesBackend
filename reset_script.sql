@@ -3,6 +3,15 @@ ALTER SESSION SET "_ORACLE_SCRIPT"=TRUE;
 
 conn super_user/root@localhost/XE;  
 
+-- Eliminar secuencias
+DROP SEQUENCE seq_id_curso;
+DROP SEQUENCE seq_id_historial_curso;
+DROP SEQUENCE seq_id_maquina;
+DROP SEQUENCE seq_id_membresia;
+DROP SEQUENCE seq_id_rutina;
+
+COMMIT;
+
 -- Eliminar tablas
 DROP TABLE historial_curso CASCADE CONSTRAINTS;
 DROP TABLE rutinas CASCADE CONSTRAINTS;
