@@ -1577,13 +1577,12 @@ app.post('/insertar-historial-curso', async (req, res) => {
 
         await connection.execute(
             `BEGIN 
-                super_user.insertar_historial_curso(:id_curso, :cliente, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :horas, :instructor); 
+                super_user.insertar_historial_curso(:cliente, :id_curso, :instructor, TO_DATE(:fecha_inscripcion, 'YYYY-MM-DD'), :horas); 
              END;`,
             {
-                id_curso: id_curso,
                 cliente: cliente,
-                instructor: instructor,
                 id_curso: id_curso,
+                instructor: instructor,
                 fecha_inscripcion: fecha_inscripcion,
                 horas: horas
             },
